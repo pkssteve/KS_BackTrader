@@ -134,7 +134,7 @@ if __name__ == '__main__':
     # cerebro.addstrategy(TestStrategy)
     strats = cerebro.optstrategy(
         TestStrategy,
-        maperiod=range(10,31)
+        maperiod=range(10,50)
     )
 
     # Datas are in a subfolder of the samples. Need to find where the script is
