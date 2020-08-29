@@ -7,6 +7,8 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import pandas as pd
+from pandas_datareader import data as web
 
 import datetime  # For datetime objects
 import os.path  # To manage paths
@@ -16,11 +18,13 @@ import sys  # To find out the script name (in argv[0])
 import backtrader as bt
 
 
+
+
 # Create a Stratey
 class TestStrategy(bt.Strategy):
     params = (
         ('maperiod', 15),
-        ('printLog', False)
+        ('printLog', False),
     )
 
     def log(self, txt, dt=None, doprint=False):
@@ -32,6 +36,7 @@ class TestStrategy(bt.Strategy):
     def __init__(self):
         # Keep a reference to the "close" line in the data[0] dataseries
         self.dataclose = self.datas[0].close
+        self.volume = self.datas[0].volume
 
         # To keep track of pending orders and buy price/commission
         self.order = None
@@ -43,12 +48,17 @@ class TestStrategy(bt.Strategy):
             self.datas[0], period=self.params.maperiod)
 
 
+
         # Indicators for the plotting show
         bt.indicators.ExponentialMovingAverage(self.datas[0], period=25)
         bt.indicators.WeightedMovingAverage(self.datas[0], period=25,
                                             subplot=True)
         bt.indicators.StochasticSlow(self.datas[0])
         bt.indicators.MACDHisto(self.datas[0])
+        smav = self.volume
+        bt.indicators.SimpleMovingAverage(
+            smav, period=self.params.maperiod)
+
         rsi = bt.indicators.RSI(self.datas[0])
         bt.indicators.SmoothedMovingAverage(rsi, period=10)
         bt.indicators.ATR(self.datas[0], plot=False)
@@ -131,19 +141,24 @@ if __name__ == '__main__':
     cerebro = bt.Cerebro()
 
     # Add a strategy
-    # cerebro.addstrategy(TestStrategy)
-    strats = cerebro.optstrategy(
-        TestStrategy,
-        maperiod=range(10,50)
-    )
-
+    cerebro.addstrategy(TestStrategy, printLog=True)
+    # strats = cerebro.optstrategy(
+    #     TestStrategy,
+    #     maperiod=range(10,20)
+    # )
+    ALPHA_APIKEY = '3XBEGZUXVYMVD9NM'
     # Datas are in a subfolder of the samples. Need to find where the script is
     # because it could have been called from anywhere
     modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     datapath = './datas/AAPL.csv' # os.path.join(os.environ['CONDA_PREFIX'], 'datas/AAPL.csv')
 
     # Create a Data Feed
-    data = bt.feeds.YahooFinanceCSVData(
+    df = web.DataReader ("AAPL", "av-intraday",
+                        start = datetime.datetime(2020, 8, 18), end = datetime.datetime(2020, 8, 27),
+                        api_key = ALPHA_APIKEY
+                        )
+    data = bt.feeds.PandasData(dataname = df)
+    data2 = bt.feeds.YahooFinanceCSVData(
         dataname=datapath,
         # Do not pass values before this date
         fromdate=datetime.datetime(2019, 8, 22),
@@ -153,7 +168,10 @@ if __name__ == '__main__':
         reverse=False)
 
     # Add the Data Feed to Cerebro
-    cerebro.adddata(data)
+    cerebro.adddata(data2)
+
+    # Analyzer
+    cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name='mysharpe')
 
     # Set our desired cash start
     cerebro.broker.setcash(100000.0)
@@ -168,8 +186,10 @@ if __name__ == '__main__':
     # print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
     # Run over everything
-    cerebro.run(maxcpus=1)
+    thestrats = cerebro.run(maxcpus=1)
+    thestrat = thestrats[0]
 
+    print('Sharpe Ratio:', thestrat.analyzers.mysharpe.get_analysis())
     # Print out the final result
     # print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
