@@ -43,25 +43,25 @@ class TestStrategy(bt.Strategy):
         self.buyprice = None
         self.buycomm = None
 
-        # Add a MovingAverageSimple indicator
-        self.sma = bt.indicators.SimpleMovingAverage(
-            self.datas[0], period=self.params.maperiod)
+        # Trend Indicators
+        self.sma = bt.indicators.SimpleMovingAverage(self.datas[0], period=self.params.maperiod)
+        bt.indicators.MACDHisto(self.datas[0])
 
+        # Momentum Indicators
+        bt.indicators.StochasticSlow(self.datas[0])
+
+        # Volitality Indicators
+        bt.indicators.ATR(self.datas[0], plot=False)
+
+        # Market Intensity
+        bt.indicators.SimpleMovingAverage(self.datas[0].volume, period=self.params.maperiod)
+        bt.indicators.RSI(self.datas[0])
 
 
         # Indicators for the plotting show
-        bt.indicators.ExponentialMovingAverage(self.datas[0], period=25)
-        bt.indicators.WeightedMovingAverage(self.datas[0], period=25,
-                                            subplot=True)
-        bt.indicators.StochasticSlow(self.datas[0])
-        bt.indicators.MACDHisto(self.datas[0])
-        smav = self.volume
-        bt.indicators.SimpleMovingAverage(
-            smav, period=self.params.maperiod)
+        # bt.indicators.ExponentialMovingAverage(self.datas[0], period=25)
+        # bt.indicators.WeightedMovingAverage(self.datas[0], period=25,subplot=True)
 
-        rsi = bt.indicators.RSI(self.datas[0])
-        bt.indicators.SmoothedMovingAverage(rsi, period=10)
-        bt.indicators.ATR(self.datas[0], plot=False)
 
     def notify_order(self, order):
         if order.status in [order.Submitted, order.Accepted]:
