@@ -3,13 +3,12 @@
 # Press ⌃R to execute it or replace it with your code.
 # Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
 
-
-
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import pandas as pd
 from pandas_datareader import data as web
 
+import argparse
 import datetime  # For datetime objects
 import os.path  # To manage paths
 import sys  # To find out the script name (in argv[0])
@@ -17,13 +16,15 @@ import sys  # To find out the script name (in argv[0])
 # Import the backtrader platform
 import backtrader as bt
 
+import StrategyCollection as sc
+
 
 
 
 # Create a Stratey
 class TestStrategy(bt.Strategy):
     params = (
-        ('maperiod', 15),
+        ('maperiod', 10),
         ('printLog', False),
     )
 
@@ -45,6 +46,8 @@ class TestStrategy(bt.Strategy):
 
         # Trend Indicators
         self.sma = bt.indicators.SimpleMovingAverage(self.datas[0], period=self.params.maperiod)
+        bt.indicators.SimpleMovingAverage(self.datas[0], period = 20)
+        bt.indicators.SimpleMovingAverage(self.datas[0], period = 40)
         bt.indicators.MACDHisto(self.datas[0])
 
         # Momentum Indicators
@@ -54,7 +57,9 @@ class TestStrategy(bt.Strategy):
         bt.indicators.ATR(self.datas[0], plot=False)
 
         # Market Intensity
-        bt.indicators.SimpleMovingAverage(self.datas[0].volume, period=self.params.maperiod)
+        # bt.indicators.SimpleMovingAverage(self.datas[0].volume, period=7)
+        # bt.indicators.SimpleMovingAverage(self.datas[0].volume, period=14)
+        bt.indicators.MACD(self.datas[0].volume, period_me1=7, period_me2=14 ,period_signal=4)
         bt.indicators.RSI(self.datas[0])
 
 
@@ -141,7 +146,7 @@ if __name__ == '__main__':
     cerebro = bt.Cerebro()
 
     # Add a strategy
-    cerebro.addstrategy(TestStrategy, printLog=True)
+    cerebro.addstrategy(sc.MyFirstStrategy, printLog=True)
     # strats = cerebro.optstrategy(
     #     TestStrategy,
     #     maperiod=range(10,20)
@@ -152,23 +157,33 @@ if __name__ == '__main__':
     modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     datapath = './datas/AAPL.csv' # os.path.join(os.environ['CONDA_PREFIX'], 'datas/AAPL.csv')
 
+    df2 = pd.read_csv('./datas/BATS_IBM, 1-2.csv', parse_dates=True, index_col=0)
+    data1 = bt.feeds.PandasData(dataname=df2)
+
     # Create a Data Feed
-    df = web.DataReader ("AAPL", "av-intraday",
-                        start = datetime.datetime(2020, 8, 18), end = datetime.datetime(2020, 8, 27),
-                        api_key = ALPHA_APIKEY
-                        )
-    data = bt.feeds.PandasData(dataname = df)
-    data2 = bt.feeds.YahooFinanceCSVData(
-        dataname=datapath,
-        # Do not pass values before this date
-        fromdate=datetime.datetime(2019, 8, 22),
-        # Do not pass values before this date
-        todate=datetime.datetime(2020, 7, 29),
-        # Do not pass values after this date
-        reverse=False)
+    # df = web.DataReader ("AAPL", "av-intraday",
+    #                     start = datetime.datetime(2020, 8, 20), end = datetime.datetime(2020, 8, 24),
+    #                     api_key = ALPHA_APIKEY,
+    #                     )
+    # data = bt.feeds.PandasData(dataname=df)
+
+
+
+    # data2 = bt.feeds.YahooFinanceCSVData(
+    #     dataname=datapath,
+    #     # Do not pass values before this date
+    #     fromdate=datetime.datetime(2017, 8, 22),
+    #     # Do not pass values before this date
+    #     todate=datetime.datetime(2020, 7, 29),
+    #     # Do not pass values after this date
+    #     reverse=False)
+    #
+    # data3 = bt.feeds.YahooFinanceData(dataname='MSFT',
+    #                                  fromdate=datetime.datetime(2014, 1, 1),
+    #                                  todate=datetime.datetime(2017, 12, 31))
 
     # Add the Data Feed to Cerebro
-    cerebro.adddata(data2)
+    cerebro.adddata(data1)
 
     # Analyzer
     cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name='mysharpe')
@@ -194,4 +209,4 @@ if __name__ == '__main__':
     # print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
     # Plotting incredibly is a line operation
-    # cerebro.plot()
+    cerebro.plot()
