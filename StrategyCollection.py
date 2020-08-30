@@ -5,6 +5,7 @@ class MyFirstStrategy(bt.Strategy):
     params = (
         ('maperiod', 10),
         ('printLog', False),
+        ('momentumLasting', 10),
     )
 
     def log(self, txt, dt=None, doprint=False):
@@ -26,12 +27,16 @@ class MyFirstStrategy(bt.Strategy):
         self.losecnt = 0
         self.tiecnt = 0
 
+        # State
+        self.momentumCnt = 0
+
+
         # Trend Indicators
         self.sma5 = bt.indicators.SimpleMovingAverage(self.datas[0], period=5)
         self.sma10 = bt.indicators.SimpleMovingAverage(self.datas[0], period = 10)
         self.sma20 = bt.indicators.SimpleMovingAverage(self.datas[0], period = 20)
         self.sma40 =  bt.indicators.SimpleMovingAverage(self.datas[0], period = 40)
-        self.macd = bt.indicators.MACDHisto(self.datas[0])
+        self.macd = bt.indicators.MACDHisto(self.datas[0], plot=False)
 
         # Momentum Indicators
         # bt.indicators.StochasticSlow(self.datas[0])
@@ -43,14 +48,13 @@ class MyFirstStrategy(bt.Strategy):
         # bt.indicators.SimpleMovingAverage(self.datas[0].volume, period=7)
         # bt.indicators.SimpleMovingAverage(self.datas[0].volume, period=14)
         self.vsma5 = bt.indicators.SimpleMovingAverage(self.datas[0].volume, period=5)
-        self.vsma10 = bt.indicators.SimpleMovingAverage(self.datas[0].volume, period=10)
-        self.vmacd = bt.indicators.MACD(self.datas[0].volume, period_me1=7, period_me2=14 ,period_signal=4)
-        self.RSI = bt.indicators.RSI(self.datas[0])
-
+        self.vsma10 = bt.indicators.SimpleMovingAverage(self.datas[0].volume, period=10, plot=False)
+        self.vmacd = bt.indicators.MACD(self.datas[0].volume, period_me1=7, period_me2=14 ,period_signal=4, plot=False)
+        self.RSI = bt.indicators.RSI(self.datas[0], period=10)
 
         # Indicators for the plotting show
         # bt.indicators.ExponentialMovingAverage(self.datas[0], period=25)
-        # bt.indicators.WeightedMovingAverage(self.datas[0], period=25,subplot=True)
+        # bt.indicators.WeightedMovingAverage(self.datas[0], period=25, subplot=True)
 
 
     def notify_order(self, order):
@@ -106,21 +110,34 @@ class MyFirstStrategy(bt.Strategy):
         if self.order:
             return
 
+        if self.momentumCnt > 0:
+            self.momentumCnt += 1
+            self.momentumCnt = self.momentumCnt % self.params.momentumLasting
+        else:
+            if self.RSI[0] < 30 and self.RSI[0] > self.RSI[-1]:
+                self.momentumCnt += 1
+
+
         # Check if we are in the market
         if not self.position:   # to Buy
 
             # Not yet ... we MIGHT BUY if ...
-            if self.dataclose[0] > self.sma10[0]:
-
-                # BUY, BUY, BUY!!! (with all possible default parameters)
-                self.log('BUY CREATE, %.2f' % self.dataclose[0])
-
-                # Keep track of the created order to avoid a 2nd order
-                self.order = self.buy()
+            # if self.dataclose[0] > self.sma10[0]:
+            #
+            #     # BUY, BUY, BUY!!! (with all possible default parameters)
+            #     self.log('BUY CREATE, %.2f' % self.dataclose[0])
+            #
+            #     # Keep track of the created order to avoid a 2nd order
+            #     self.order = self.buy()
+            if self.RSI[0] < 40:
+                if self.dataclose[0] > self.sma10[0]:
+                    # if self.volume[0] > self.vsma5:
+                        self.log('BUY CREATE, %.2f' % self.dataclose[0])
+                        self.order = self.buy()
 
         else:   # to Sell
 
-            if self.dataclose[0] < self.sma10[0]:
+            if self.dataclose[0] < self.sma10[0] or self.dataclose[0] < (self.buyprice):
                 # SELL, SELL, SELL!!! (with all possible default parameters)
                 self.log('SELL CREATE, %.2f' % self.dataclose[0])
 
