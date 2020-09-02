@@ -157,7 +157,7 @@ if __name__ == '__main__':
     modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     datapath = './datas/AAPL.csv' # os.path.join(os.environ['CONDA_PREFIX'], 'datas/AAPL.csv')
 
-    df2 = pd.read_csv('./datas/BATS_IBM, 1-2.csv', parse_dates=True, index_col=0)
+    df2 = pd.read_csv('./datas/BATS_IBM, 15.csv', parse_dates=True, index_col=0)
     data1 = bt.feeds.PandasData(dataname=df2)
 
     # Create a Data Feed
