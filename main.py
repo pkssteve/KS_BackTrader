@@ -8,6 +8,7 @@ from __future__ import (absolute_import, division, print_function,
 import pandas as pd
 from pandas_datareader import data as web
 
+import numpy
 import argparse
 import datetime  # For datetime objects
 import os.path  # To manage paths
@@ -18,138 +19,16 @@ import backtrader as bt
 
 import StrategyCollection as sc
 
-
-
-
-# Create a Stratey
-class TestStrategy(bt.Strategy):
-    params = (
-        ('maperiod', 10),
-        ('printLog', False),
-    )
-
-    def log(self, txt, dt=None, doprint=False):
-        ''' Logging function fot this strategy'''
-        if self.params.printLog or doprint:
-            dt = dt or self.datas[0].datetime.date(0)
-            print('%s, %s' % (dt.isoformat(), txt))
-
-    def __init__(self):
-        # Keep a reference to the "close" line in the data[0] dataseries
-        self.dataclose = self.datas[0].close
-        self.volume = self.datas[0].volume
-
-        # To keep track of pending orders and buy price/commission
-        self.order = None
-        self.buyprice = None
-        self.buycomm = None
-
-        # Trend Indicators
-        self.sma = bt.indicators.SimpleMovingAverage(self.datas[0], period=self.params.maperiod)
-        bt.indicators.SimpleMovingAverage(self.datas[0], period = 20)
-        bt.indicators.SimpleMovingAverage(self.datas[0], period = 40)
-        bt.indicators.MACDHisto(self.datas[0])
-
-        # Momentum Indicators
-        bt.indicators.StochasticSlow(self.datas[0])
-
-        # Volitality Indicators
-        bt.indicators.ATR(self.datas[0], plot=False)
-
-        # Market Intensity
-        # bt.indicators.SimpleMovingAverage(self.datas[0].volume, period=7)
-        # bt.indicators.SimpleMovingAverage(self.datas[0].volume, period=14)
-        bt.indicators.MACD(self.datas[0].volume, period_me1=7, period_me2=14 ,period_signal=4)
-        bt.indicators.RSI(self.datas[0])
-
-
-        # Indicators for the plotting show
-        # bt.indicators.ExponentialMovingAverage(self.datas[0], period=25)
-        # bt.indicators.WeightedMovingAverage(self.datas[0], period=25,subplot=True)
-
-
-    def notify_order(self, order):
-        if order.status in [order.Submitted, order.Accepted]:
-            # Buy/Sell order submitted/accepted to/by broker - Nothing to do
-            return
-
-        # Check if an order has been completed
-        # Attention: broker could reject order if not enough cash
-        if order.status in [order.Completed]:
-            if order.isbuy():
-                self.log(
-                    'BUY EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
-                    (order.executed.price,
-                     order.executed.value,
-                     order.executed.comm))
-
-                self.buyprice = order.executed.price
-                self.buycomm = order.executed.comm
-            else:  # Sell
-                self.log('SELL EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
-                         (order.executed.price,
-                          order.executed.value,
-                          order.executed.comm))
-
-            self.bar_executed = len(self)
-
-        elif order.status in [order.Canceled, order.Margin, order.Rejected]:
-            self.log('Order Canceled/Margin/Rejected')
-
-        # Write down: no pending order
-        self.order = None
-
-    def notify_trade(self, trade):
-        if not trade.isclosed:
-            return
-
-        self.log('OPERATION PROFIT, GROSS %.2f, NET %.2f' %
-                 (trade.pnl, trade.pnlcomm))
-
-    def next(self):
-        # Simply log the closing price of the series from the reference
-        self.log('Close, %.2f' % self.dataclose[0])
-
-        # Check if an order is pending ... if yes, we cannot send a 2nd one
-        if self.order:
-            return
-
-        # Check if we are in the market
-        if not self.position:
-
-            # Not yet ... we MIGHT BUY if ...
-            if self.dataclose[0] > self.sma[0]:
-
-                # BUY, BUY, BUY!!! (with all possible default parameters)
-                self.log('BUY CREATE, %.2f' % self.dataclose[0])
-
-                # Keep track of the created order to avoid a 2nd order
-                self.order = self.buy()
-
-        else:
-
-            if self.dataclose[0] < self.sma[0]:
-                # SELL, SELL, SELL!!! (with all possible default parameters)
-                self.log('SELL CREATE, %.2f' % self.dataclose[0])
-
-                # Keep track of the created order to avoid a 2nd order
-                self.order = self.sell()
-
-    def stop(self):
-        self.log('(MA Period %2d) Ending Value %.2f' %
-                 (self.params.maperiod, self.broker.getvalue()), doprint=True)
-
-
-
 if __name__ == '__main__':
     # Create a cerebro entity
     cerebro = bt.Cerebro()
 
     # Add a strategy
-    cerebro.addstrategy(sc.MyFirstStrategy, printLog=True)
+    cerebro.addstrategy(sc.LongTrendStrategy, printLog=True)
     # strats = cerebro.optstrategy(
-    #     TestStrategy,
-    #     maperiod=range(10,20)
+    #     sc.MyFirstStrategy,
+    #     momentumLasting=range(5,6),
+    #     expectedProfit =numpy.arange(0.01, 0.04, 0.01)
     # )
     ALPHA_APIKEY = '3XBEGZUXVYMVD9NM'
     # Datas are in a subfolder of the samples. Need to find where the script is
@@ -157,7 +36,7 @@ if __name__ == '__main__':
     modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     datapath = './datas/AAPL.csv' # os.path.join(os.environ['CONDA_PREFIX'], 'datas/AAPL.csv')
 
-    df2 = pd.read_csv('./datas/BATS_IBM, 15.csv', parse_dates=True, index_col=0)
+    df2 = pd.read_csv('./datas/BATS_IBM, 60-3.csv', parse_dates=True, index_col=0)
     data1 = bt.feeds.PandasData(dataname=df2)
 
     # Create a Data Feed
@@ -184,6 +63,9 @@ if __name__ == '__main__':
 
     # Add the Data Feed to Cerebro
     cerebro.adddata(data1)
+
+    # Upsampleing data
+    # cerebro.replaydata(data1, timeframe = bt.TimeFrame.Days, compression = 1)
 
     # Analyzer
     cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name='mysharpe')
