@@ -42,7 +42,6 @@ class TestStrategy(bt.Strategy):
         self.sma = bt.indicators.SimpleMovingAverage(
             self.datas[0], period=self.params.maperiod)
 
-
         # Indicators for the plotting show
         bt.indicators.ExponentialMovingAverage(self.datas[0], period=25)
         bt.indicators.WeightedMovingAverage(self.datas[0], period=25,
@@ -140,7 +139,7 @@ if __name__ == '__main__':
     # Datas are in a subfolder of the samples. Need to find where the script is
     # because it could have been called from anywhere
     modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    datapath = './datas/AAPL.csv' # os.path.join(os.environ['CONDA_PREFIX'], 'datas/AAPL.csv')
+    datapath = './datas/AAPL.csv'
 
     # Create a Data Feed
     data = bt.feeds.YahooFinanceCSVData(
@@ -168,7 +167,7 @@ if __name__ == '__main__':
     # print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
     # Run over everything
-    cerebro.run(maxcpus=1)
+    cerebro.run()
 
     # Print out the final result
     # print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
