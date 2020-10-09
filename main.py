@@ -31,37 +31,14 @@ if __name__ == '__main__':
     #     expectedProfit =numpy.arange(0.01, 0.04, 0.01)
     # )
     ALPHA_APIKEY = '3XBEGZUXVYMVD9NM'
-    # Datas are in a subfolder of the samples. Need to find where the script is
-    # because it could have been called from anywhere
+
     modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
     datapath = './datas/AAPL.csv' # os.path.join(os.environ['CONDA_PREFIX'], 'datas/AAPL.csv')
 
     df2 = pd.read_csv('./datas/BATS_IBM, 60-3.csv', parse_dates=True, index_col=0)
     data1 = bt.feeds.PandasData(dataname=df2)
 
-    # Create a Data Feed
-    # df = web.DataReader ("AAPL", "av-intraday",
-    #                     start = datetime.datetime(2020, 8, 20), end = datetime.datetime(2020, 8, 24),
-    #                     api_key = ALPHA_APIKEY,
-    #                     )
-    # data = bt.feeds.PandasData(dataname=df)
 
-
-
-    # data2 = bt.feeds.YahooFinanceCSVData(
-    #     dataname=datapath,
-    #     # Do not pass values before this date
-    #     fromdate=datetime.datetime(2017, 8, 22),
-    #     # Do not pass values before this date
-    #     todate=datetime.datetime(2020, 7, 29),
-    #     # Do not pass values after this date
-    #     reverse=False)
-    #
-    # data3 = bt.feeds.YahooFinanceData(dataname='MSFT',
-    #                                  fromdate=datetime.datetime(2014, 1, 1),
-    #                                  todate=datetime.datetime(2017, 12, 31))
-
-    # Add the Data Feed to Cerebro
     cerebro.adddata(data1)
 
     # Upsampleing data
