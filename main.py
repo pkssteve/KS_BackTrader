@@ -24,7 +24,7 @@ if __name__ == '__main__':
     cerebro = bt.Cerebro()
 
     # Add a strategy
-    cerebro.addstrategy(sc.LongTrendStrategy, printLog=True)
+    cerebro.addstrategy(sc.MomentumTrackingStrategy, printLog=True)
     # strats = cerebro.optstrategy(
     #     sc.MyFirstStrategy,
     #     momentumLasting=range(5,6),

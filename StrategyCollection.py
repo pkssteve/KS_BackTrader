@@ -10,7 +10,8 @@ class MomentumTrackingStrategy(bt.Strategy):
         ('momentumLasting', 40),
         ('expectedProfit', 0.01),
         ('lowboundRSI', 25),
-        ('upperboundRSI', 68),
+        ('lowboundRSI2', 30),
+        ('upperboundRSI', 50),
     )
 
     def log(self, txt, dt=None, doprint=False):
@@ -19,33 +20,6 @@ class MomentumTrackingStrategy(bt.Strategy):
             dt = dt or self.datas[0].datetime.date(0)
             print('%s, %s' % (dt.isoformat(), txt))
 
-    def examineCandle(self):
-        ret = 0
-
-        # calc source values
-        preDiff = abs(self.data.close[-1] - self.data.open[-1])
-        curDiff = abs(self.data.close[0] - self.data.open[0])
-
-        direction = list()
-        for i in range(3):
-            direction.append(1 if self.data.close[i - 2] > self.data.open[i - 2] else 0)
-
-        # decision logic
-        if self.dataclose[0] > self.dataclose[-1] or direction[2] == 1:
-            ret = 1
-        if (direction[2] == 1) and (curDiff > preDiff):
-            ret = 2
-
-        return ret
-
-    def examineVolume(self):
-        return 1 if self.data.volume[0] > self.data.volume[-1] else 0
-
-    def calcPossibleProfit(self, curPrice, elderPrice):
-        profit = 0
-        dividedby3 = abs((elderPrice - curPrice) / 3)
-        profit = (dividedby3 / curPrice) if (dividedby3 / curPrice) >= self.params.expectedProfit else 0
-        return profit
 
     def __init__(self):
         # Keep a reference to the "close" line in the data[0] dataseries
@@ -79,9 +53,9 @@ class MomentumTrackingStrategy(bt.Strategy):
 
         # Trend Indicators
         self.sma3 = bt.indicators.SimpleMovingAverage(self.datas[0], period=3) #for peak detection
-        # self.sma10 = bt.indicators.SimpleMovingAverage(self.datas[0], period=10)
-        # self.sma20 = bt.indicators.SimpleMovingAverage(self.datas[0], period=20)
-        # self.sma40 = bt.indicators.SimpleMovingAverage(self.datas[0], period=40)
+        self.sma10 = bt.indicators.SimpleMovingAverage(self.datas[0], period=10)
+        self.sma20 = bt.indicators.SimpleMovingAverage(self.datas[0], period=20)
+        self.sma40 = bt.indicators.SimpleMovingAverage(self.datas[0], period=40)
         self.sma60 = bt.indicators.SimpleMovingAverage(self.datas[0], period=60)
         self.macd = bt.indicators.MACD(self.datas[0], period_me1=24, period_me2=48)
         self.atr = bt.indicators.AverageTrueRange(self.datas[0], period=14)
@@ -177,36 +151,29 @@ class MomentumTrackingStrategy(bt.Strategy):
         if self.momentumCnt > 0:
             self.momentumCnt += 1
             self.momentumCnt = self.momentumCnt % self.params.momentumLasting
-        else:
-            if self.RSI[0] <= self.params.lowboundRSI and self.RSI[1] > self.params.lowboundRSI:  # Strong Momentum (in other view, bearish risk)
-                self.momentumCnt += 1
+
+        if self.RSI[0] <= self.params.lowboundRSI and self.RSI[-1] > self.params.lowboundRSI:  # Strong Momentum (in other view, bearish risk)
+            self.momentumCnt = 1
 
         # Check if we are in the market
         if not self.position:  # to Buy
 
             # Not yet ... we MIGHT BUY if ...
-            # if self.dataclose[0] > self.sma10[0]:
-            #
-            #     # BUY, BUY, BUY!!! (with all possible default parameters)
-            #     self.log('BUY CREATE, %.2f' % self.dataclose[0])
-            #
-            #     # Keep track of the created order to avoid a 2nd order
-            #     self.order = self.buy()
 
             if self.momentumCnt > 0:
+                if self.RSI[0] >= self.params.upperboundRSI:
+                    self.momentumCnt = 0
 
-                if self.rebuy == 1 and self.RSI[0] > self.RSI[1]:
+                if self.RSI[0] > self.RSI[-1] and self.RSI[-1] <= self.params.lowboundRSI2 and self.RSI[0] > self.params.lowboundRSI2:
                     self.order = self.buy()
-                    self.escapePrice = self.dataclose[0] * 1.001
+                    self.escapePrice = self.dataclose[0] * 0.98
 
-                elif self.RSI[0] > self.RSI[1] and self.RSI[1] <= self.params.lowboundRSI:
-                    self.order = self.buy()
-                    self.escapePrice = self.dataclose[0] * 1.001
 
         else:  # to Sell
 
             #escape condition
             if self.dataclose[0] <= self.escapePrice:
+                self.log('SELL CREATE, %.2f' % self.dataclose[0])
                 self.order = self.sell()
                 if self.momentumCnt > 0:
                     self.rebuy = 1
@@ -214,13 +181,13 @@ class MomentumTrackingStrategy(bt.Strategy):
             #profit condition
 
 
-            if self.macdCross[0] == -1:
+            if self.RSI[0] >= self.params.upperboundRSI:
                 # SELL, SELL, SELL!!! (with all possible default parameters)
                 self.log('SELL CREATE, %.2f' % self.dataclose[0])
 
                 # Keep track of the created order to avoid a 2nd order
                 self.order = self.sell()
-                self.holdcnt = 5
+                self.momentumCnt = 0
 
 
     def stop(self):
