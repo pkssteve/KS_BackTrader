@@ -58,7 +58,7 @@ if __name__ == "__main__":
     data1 = bt.feeds.PandasData(dataname=df2)
 
     # cerebro.adddata(data1)
-    cerebro.replaydata(data1, timeframe=bt.TimeFrame.Minutes, compression=60)
+    # cerebro.replaydata(data1, timeframe=bt.TimeFrame.Minutes, compression=60)
 
     # Upsampleing data
     # cerebro.replaydata(data1, timeframe = bt.TimeFrame.Days, compression = 1)
