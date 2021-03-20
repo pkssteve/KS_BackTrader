@@ -152,7 +152,7 @@ class RSIMomentum(bt.Strategy):
 
             elif self.RSIState["state"] == "MACD cross":
                 retval = 1
-                self.save_RSI("Buy", len(self),
+                self.save_RSI("not started", len(self),
                               self.dataclose[0], self.RSI[-1])
 
             elif self.RSIState["state"] == "buy":

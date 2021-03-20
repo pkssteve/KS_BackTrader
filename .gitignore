@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+datas/btc_1H_kaggle.csv
+datas/btc_1min_kaggle.csv
+datas/btc_1min.csv
+datas/btc_10min_kaggle.csv

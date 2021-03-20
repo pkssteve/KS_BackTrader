@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # df2 = df2[:"2021-01-29"]
     data1 = bt.feeds.PandasData(dataname=df2)
 
-    # cerebro.adddata(data1)
+    cerebro.adddata(data1)
     # cerebro.replaydata(data1, timeframe=bt.TimeFrame.Minutes, compression=60)
 
     # Upsampleing data
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     cerebro.broker.setcash(100000.0)
 
     # Add a FixedSize sizer according to the stake
-    cerebro.addsizer(bt.sizers.PercentSizer, percents=95)
+    cerebro.addsizer(bt.sizers.PercentSizer, percents=90)
 
     # Set the commission - 0.1% ... divide by 100 to remove the %
     cerebro.broker.setcommission(commission=0.001)
