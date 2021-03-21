@@ -27,6 +27,7 @@ class RSIMomentum(bt.Strategy):
         # To keep track of pending orders and buy price/commission
         self.order = None
         self.buyprice = None
+        self.sellprice = None
         self.buycomm = None
         self.buylen = 0
         self.wincnt = 0
@@ -106,6 +107,7 @@ class RSIMomentum(bt.Strategy):
                     self.losecnt += 1
                 else:
                     self.tiecnt += 1
+                self.sellprice = order.executed.price
 
             self.bar_executed = len(self)
 
@@ -140,31 +142,67 @@ class RSIMomentum(bt.Strategy):
             if self.RSIState["state"] == "not started":
                 if (self.RSI[0] > self.RSI[-1] and self.RSI[-1] <= 30):  # and self.RSI[0] > 30
                     self.save_RSI("RSI momentum", len(self),
-                                  self.dataclose[0], self.RSI[-1])
+                                  self.dataclose[0], self.RSI[0])
 
             elif self.RSIState["state"] == "RSI momentum":
                 if self.RSI[0] < 30 or self.RSI[0] > 65:
                     self.save_RSI("not started", len(self),
-                                  self.dataclose[0], self.RSI[-1])
+                                  self.dataclose[0], self.RSI[0])
                 elif self.macd.lines.macd[0] > self.macd.lines.signal[0]:
                     self.save_RSI("MACD cross", len(self),
-                                  self.dataclose[0], self.RSI[-1])
+                                  self.dataclose[0], self.RSI[0])
 
             elif self.RSIState["state"] == "MACD cross":
                 retval = 1
-                self.save_RSI("not started", len(self),
-                              self.dataclose[0], self.RSI[-1])
+                self.save_RSI("buy", len(self),
+                              self.dataclose[0], self.RSI[0])
 
             elif self.RSIState["state"] == "buy":
+                if self.dataclose[0] <= self.buyprice * 0.97:
+                    retval = -1
+                    self.save_RSI("not started", len(self),
+                                  self.dataclose[0], self.RSI[0])
+                elif self.RSI[0] >= 60:
+                    self.save_RSI("ready for sell", len(self),
+                                  self.dataclose[0], self.RSI[0])
+                elif self.RSI[0] >= 70:
+                    retval = -1
+                    self.save_RSI("not started", len(self),
+                                  self.dataclose[0], self.RSI[0])
+
+            elif self.RSIState["state"] == "escape and try again":
+                if self.RSIState["len"] < len(self):
+                    if (len(self) - self.RSIState["len"]) > 10:
+                        self.save_RSI("not started", len(self),
+                                      self.dataclose[0], self.RSI[0])
+                    elif self.dataclose[0] >= self.buyprice:
+                        retval = 1
+                        self.save_RSI("buy", len(self),
+                                      self.dataclose[0], self.RSI[0])
+
+            elif self.RSIState["state"] == "sell and profit again":
                 print("To do")
-            elif self.RSIState["state"] == "sell and again1":
-                print("To do")
-            elif self.RSIState["state"] == "sell and again2":
-                print("To do")
-            elif self.RSIState["state"] == "finish":
-                print("To do")
-            elif self.RSIState["state"] == "sell and wait":
-                print("To do")
+
+            elif self.RSIState["state"] == "ready for sell":
+                if self.RSI[0] < self.RSI[-1]:
+                    retval = -1
+                    self.save_RSI("ready for buy", len(self),
+                                  self.dataclose[0], self.RSI[0])
+
+            elif self.RSIState["state"] == "ready for buy":
+                if self.RSI[0] > self.RSI[-1] and self.RSI[0] > 68:
+                    retval = 1
+                    self.save_RSI("hold position", len(self),
+                                  self.dataclose[0], self.RSI[0])
+                elif self.RSI[0] < 40:
+                    self.save_RSI("not started", len(self),
+                                  self.dataclose[0], self.RSI[0])
+
+            elif self.RSIState["state"] == "hold position":
+                if self.dataclose[0] <= self.buyprice * 1.005:
+                    retval = -1
+                    self.save_RSI("not started", len(self),
+                                  self.dataclose[0], self.RSI[0])
 
         return retval
 
@@ -185,23 +223,28 @@ class RSIMomentum(bt.Strategy):
 
         else:  # to Sell
             if self.buylen + 1 < len(self):
-                if self.dataclose[0] <= self.buyprice * 0.97:
-                    # SELL, SELL, SELL!!! (with all possible default parameters)
+                nSell = self.RSIstatemachine()
+                if nSell == -1:
                     self.log("SELL CREATE, %.2f" % self.dataclose[0])
-
-                    # Keep track of the created order to avoid a 2nd order
                     self.order = self.sell()
 
-                # self.macd.lines.macd[0] < self.macd.lines.signal[0]:
-                # self.RSI[0] >= 70:
+                # if self.dataclose[0] <= self.buyprice * 0.97:
+                #     # SELL, SELL, SELL!!! (with all possible default parameters)
+                #     self.log("SELL CREATE, %.2f" % self.dataclose[0])
 
-                # (self.dataclose[0] >= self.buyprice * 1.07) or
-                elif self.RSI[0] >= 70:
-                    # SELL, SELL, SELL!!! (with all possible default parameters)
-                    self.log("SELL CREATE, %.2f" % self.dataclose[0])
+                #     # Keep track of the created order to avoid a 2nd order
+                #     self.order = self.sell()
 
-                    # Keep track of the created order to avoid a 2nd order
-                    self.order = self.sell()
+                # # self.macd.lines.macd[0] < self.macd.lines.signal[0]:
+                # # self.RSI[0] >= 70:
+
+                # # (self.dataclose[0] >= self.buyprice * 1.07) or
+                # elif self.RSI[0] >= 70:
+                #     # SELL, SELL, SELL!!! (with all possible default parameters)
+                #     self.log("SELL CREATE, %.2f" % self.dataclose[0])
+
+                #     # Keep track of the created order to avoid a 2nd order
+                #     self.order = self.sell()
 
     def stop(self):
         self.log(

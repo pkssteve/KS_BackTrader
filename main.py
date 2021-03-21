@@ -54,7 +54,7 @@ if __name__ == "__main__":
     df2 = pd.read_csv("./datas/btc_1H_kaggle.csv",
                       parse_dates=True, index_col=0)
     df2 = df2["2020-03-01":]
-    # df2 = df2[:"2021-01-29"]
+    # df2 = df2[:"2020-03-19"]
     data1 = bt.feeds.PandasData(dataname=df2)
 
     cerebro.adddata(data1)
@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     # cf.go_offline(connected=True)
     b = Bokeh(style="bar")
-    cerebro.plot(iplot=False)
+    cerebro.plot(b, iplot=False)
     # py.offline.plot_mpl(result[0][0], filename="simple_candlestick.html")
     # plotly.offline.plot_mpl(result[0][0], filename="simple_candlestick.html")
     # pio.write_html(result[0][0], file="hello_world.html", auto_open=True)
