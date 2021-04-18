@@ -1,30 +1,150 @@
+appdirs==1.4.4
+appnope==0.1.0
+argon2-cffi @ file:///Users/runner/miniforge3/conda-bld/argon2-cffi_1610522650583/work
+astroid @ file:///opt/concourse/worker/volumes/live/a8a8b2be-963f-4e30-7c46-4aecaf981ab4/volume/astroid_1613500845571/work
+async-generator==1.10
+asyncio==3.4.3
+attrs @ file:///tmp/build/80754af9/attrs_1604765588209/work
+autobahn==20.7.1
+Automat==20.2.0
+autopep8 @ file:///tmp/build/80754af9/autopep8_1596578164842/work
+backcall==0.2.0
 backtrader==1.9.76.123
-certifi==2020.6.20
+backtrader-plotting==1.1.0
+beautifulsoup4==4.9.3
+binance==0.3
+binance-client==1.0.0
+black==19.10b0
+bleach @ file:///home/conda/feedstock_root/build_artifacts/bleach_1612213472466/work
+bokeh==2.0.2
+bs4==0.0.1
+certifi==2020.12.5
+cffi @ file:///Users/runner/miniforge3/conda-bld/cffi_1613414031019/work
 chardet==3.0.4
-click==7.1.2
+chart-studio==1.1.0
+click @ file:///home/linux1/recipes/ci/click_1610990599742/work
+colorlover==0.3.0
+comtypes @ https://github.com/mementum/comtypes/archive/master.zip
+constantly==15.1.0
+cryptography==3.2.1
+cufflinks==0.17.3
 cycler==0.10.0
+dateparser==1.0.0
+decorator==4.4.2
+defusedxml @ file:///home/conda/feedstock_root/build_artifacts/defusedxml_1615232257335/work
+entrypoints @ file:///home/conda/feedstock_root/build_artifacts/entrypoints_1605121927639/work/dist/entrypoints-0.3-py2.py3-none-any.whl
+finance-datareader==0.9.14
+flake8 @ file:///tmp/build/80754af9/flake8_1615834841867/work
 Flask==1.1.2
+hyperlink==20.0.1
 idna==2.10
+importlib-metadata @ file:///tmp/build/80754af9/importlib-metadata_1602276842396/work
+incremental==17.5.0
+inflection==0.5.1
+iniconfig @ file:///tmp/build/80754af9/iniconfig_1602780191262/work
+ipykernel @ file:///opt/concourse/worker/volumes/live/43eaf185-e9cd-4e78-5afa-c19accf1339d/volume/ipykernel_1596206683810/work/dist/ipykernel-5.3.4-py3-none-any.whl
+ipympl @ file:///home/conda/feedstock_root/build_artifacts/ipympl_1611166850005/work
+ipython @ file:///opt/concourse/worker/volumes/live/8c453bb6-500b-4747-778c-a236ae4a574d/volume/ipython_1593447395779/work
+ipython-genutils @ file:///tmp/build/80754af9/ipython_genutils_1606773439826/work
+ipywidgets @ file:///home/conda/feedstock_root/build_artifacts/ipywidgets_1609995587151/work
+isort @ file:///tmp/build/80754af9/isort_1616355431277/work
 itsdangerous==0.24
-Jinja2>=2.0
-kiwisolver==1.2.0
+jedi @ file:///opt/concourse/worker/volumes/live/565dbe5a-443f-465a-7ff2-b61f4a5f081d/volume/jedi_1598371617578/work
+Jinja2 @ file:///home/conda/feedstock_root/build_artifacts/jinja2_1612119311452/work
+jsonschema @ file:///home/conda/feedstock_root/build_artifacts/jsonschema_1614815863336/work
+jupyter==1.0.0
+jupyter-client @ file:///tmp/build/80754af9/jupyter_client_1601311786391/work
+jupyter-console==6.2.0
+jupyter-core @ file:///opt/concourse/worker/volumes/live/35a93b4e-d6fb-4720-7895-2fda25ada785/volume/jupyter_core_1606149000225/work
+jupyterlab-pygments @ file:///home/conda/feedstock_root/build_artifacts/jupyterlab_pygments_1601375948261/work
+jupyterlab-widgets @ file:///home/conda/feedstock_root/build_artifacts/jupyterlab_widgets_1609173350931/work
+kiwisolver @ file:///opt/concourse/worker/volumes/live/f396cc75-ab93-4292-5463-c41bf6c4bd1a/volume/kiwisolver_1612282405830/work
+lazy-object-proxy @ file:///opt/concourse/worker/volumes/live/34f7b6f0-7e5d-4b28-7c26-d6747b7d340c/volume/lazy-object-proxy_1616529069287/work
 lxml==4.5.2
-MarkupSafe==2.0.0a1
+markdown2==2.4.0
+MarkupSafe @ file:///Users/runner/miniforge3/conda-bld/markupsafe_1610127516870/work
 matplotlib==3.3.1
+mccabe==0.6.1
+mistune @ file:///Users/runner/miniforge3/conda-bld/mistune_1610112888247/work
+more-itertools @ file:///tmp/build/80754af9/more-itertools_1605111547926/work
 multitasking==0.0.9
-numpy==1.19.1
+mypy-extensions==0.4.3
+nbclient @ file:///home/conda/feedstock_root/build_artifacts/nbclient_1614336084111/work
+nbconvert @ file:///Users/runner/miniforge3/conda-bld/nbconvert_1605401853753/work
+nbformat @ file:///home/conda/feedstock_root/build_artifacts/nbformat_1611005694671/work
+nest-asyncio==1.5.0
+nodejs==0.1.1
+notebook @ file:///Users/runner/miniforge3/conda-bld/notebook_1610575341778/work
+numpy @ file:///Users/runner/miniforge3/conda-bld/numpy_1610324566419/work
+optional-django==0.1.0
+packaging==20.4
 pandas==1.1.1
 pandas-datareader==0.9.0
 pandas-market-calendars==1.4.2
+pandocfilters==1.4.3
+parso==0.7.0
+pathspec==0.7.0
+pexpect @ file:///tmp/build/80754af9/pexpect_1605563209008/work
+pickleshare==0.7.5
 Pillow==7.2.0
+plotly==4.14.3
+pluggy==0.13.1
+prometheus-client @ file:///home/conda/feedstock_root/build_artifacts/prometheus_client_1605543085815/work
+prompt-toolkit @ file:///tmp/build/80754af9/prompt-toolkit_1602688806899/work
+ptyprocess @ file:///tmp/build/80754af9/ptyprocess_1605560620615/work/dist/ptyprocess-0.6.0-py2.py3-none-any.whl
+py @ file:///tmp/build/80754af9/py_1593446248552/work
+pyasn1==0.4.8
+pyasn1-modules==0.2.8
+pycodestyle==2.6.0
+pycparser @ file:///home/conda/feedstock_root/build_artifacts/pycparser_1593275161868/work
+pyflakes @ file:///home/ktietz/src/ci_ipy2/pyflakes_1612551159640/work
+Pygments @ file:///tmp/build/80754af9/pygments_1604103097372/work
+PyHamcrest==2.0.2
+pylint @ file:///opt/concourse/worker/volumes/live/7ace7572-9cc8-42c5-6df9-c146c1e75e2a/volume/pylint_1617135820553/work
+pyOpenSSL==20.0.0
 pyparsing==2.4.7
+pyrsistent @ file:///Users/runner/miniforge3/conda-bld/pyrsistent_1610146827228/work
+pytest==0.0.0
+python-binance==0.7.10
 python-dateutil==2.8.1
 pytz==2020.1
+PyYAML==5.4.1
+pyzmq==20.0.0
+qtconsole==5.0.2
+QtPy==1.9.0
+Quandl==3.6.0
+regex @ file:///opt/concourse/worker/volumes/live/a70aa475-ce0d-458c-6f7c-8e0ce34c1844/volume/regex_1606772986255/work
 requests==2.24.0
+requests-file==1.5.1
+retrying==1.3.3
+Send2Trash==1.5.0
+service-identity==18.1.0
 simplejson==3.17.2
-six==1.15.0
+six @ file:///opt/concourse/worker/volumes/live/5839b2d2-7415-4ff0-4c61-c4cddf798f7c/volume/six_1605205320479/work
+soupsieve==2.1
+TA-Lib==0.4.19
+terminado @ file:///Users/runner/miniforge3/conda-bld/terminado_1609794230677/work
+testpath==0.4.4
+toml @ file:///tmp/build/80754af9/toml_1592853716807/work
+tornado @ file:///opt/concourse/worker/volumes/live/cd39df49-5c81-4c95-513c-5bb83298b7ef/volume/tornado_1606942310103/work
+tqdm==4.56.0
+traitlets==4.3.3
 tv2bt==1.0
+Twisted==20.3.0
+txaio==20.4.1
+typed-ast @ file:///opt/concourse/worker/volumes/live/85c87157-84ad-443c-5815-d7450a5595c1/volume/typed-ast_1610484564230/work
+typing-extensions @ file:///tmp/build/80754af9/typing_extensions_1611751222202/work
+tzlocal==2.1
+ujson==4.0.2
 urllib3==1.25.10
+wcwidth @ file:///tmp/build/80754af9/wcwidth_1593447189090/work
+webencodings==0.5.1
+websocket-client==0.57.0
+websockets==8.1
 Werkzeug==1.0.1
+widgetsnbextension @ file:///Users/runner/miniforge3/conda-bld/widgetsnbextension_1605475527209/work
+wrapt==1.12.1
 yahoo-finance==1.4.0
 yfinance==0.1.54
+zipp @ file:///tmp/build/80754af9/zipp_1604001098328/work
+zope.interface==5.2.0
