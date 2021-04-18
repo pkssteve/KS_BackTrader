@@ -38,7 +38,6 @@ def practiceCode():
 
     index = pd.date_range("2019-01-01", "2019-10-01", freq="B")
     ser = pd.Series(range(len(index)), index=index)
-    ser
 
     df2 = pd.read_csv("datas/btcusd.csv")
     df2.reset_index()

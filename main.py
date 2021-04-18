@@ -11,6 +11,7 @@ import argparse
 import datetime  # For datetime objects
 import os.path  # To manage paths
 import sys  # To find out the script name (in argv[0])
+import time
 
 # import cufflinks as cf
 # import chart_studio.plotly as py
@@ -26,16 +27,23 @@ from backtrader_plotting.schemes import Tradimo
 import backtrader as bt
 
 import StrategyCollection as sc
+import RSI_Simple as rs
+import Buy_Hold as bh
+import RSI_Farm as rf
 
 if __name__ == "__main__":
     # Create a cerebro entity
     cerebro = bt.Cerebro(stdstats=False)
 
     # Add a strategy
-    cerebro.addstrategy(sc.RSIMomentum, printLog=True)
+    # cerebro.addstrategy(bh.BuyAndHold, printLog=True)
+    # cerebro.addstrategy(rs.RSISimple, printLog=True)
+    # cerebro.addstrategy(sc.RSIMomentum, printLog=True)
+    cerebro.addstrategy(rs.RSISimple, printLog=True)
+
     # strats = cerebro.optstrategy(
     #     sc.MyFirstStrategy,
-    #     momentumLasting=range(5,6),
+    #     momentumLasting=range(5,6),R
     #     expectedProfit =numpy.arange(0.01, 0.04, 0.01)
     # )
 
@@ -51,15 +59,22 @@ if __name__ == "__main__":
         "./datas/AAPL.csv"
     )
 
-    df2 = pd.read_csv("./datas/btc_1H_kaggle.csv",
-                      parse_dates=True, index_col=0)
-    df2 = df2["2020-03-01":]
-    # df2 = df2[:"2020-03-19"]
+    # df2 = pd.read_csv("./datas/coin/BTCUSDT.csv",
+    #                   parse_dates=True, index_col=0)
+    filename = "./datas/STOCK/COKE.csv"
+    df2 = pd.read_csv(filename, parse_dates=True, index_col=0)
+    # df2 = df2["2018-03-01":]
+    df2 = df2["2020-09-12":"2021-04-12"]
+    # df2 = df2[:"2021-04-12"]
+    # df2 = df2[['open', 'high', 'low', 'close', 'Volume']]
+    # format = '%Y-%m-%d %H:%M:%S'
+    # df2.index = df2.index.strftime(format)
+
     data1 = bt.feeds.PandasData(dataname=df2)
 
     cerebro.adddata(data1)
-    # cerebro.replaydata(data1, timeframe=bt.TimeFrame.Minutes, compression=60)
 
+    # cerebro.replaydata(data1, timeframe=bt.TimeFrame.Minutes, compression=60)
     # Upsampleing data
     # cerebro.replaydata(data1, timeframe = bt.TimeFrame.Days, compression = 1)
 
@@ -70,7 +85,7 @@ if __name__ == "__main__":
     cerebro.broker.setcash(100000.0)
 
     # Add a FixedSize sizer according to the stake
-    cerebro.addsizer(bt.sizers.PercentSizer, percents=90)
+    # cerebro.addsizer(bt.sizers.PercentSizer, percents=92)
 
     # Set the commission - 0.1% ... divide by 100 to remove the %
     cerebro.broker.setcommission(commission=0.001)
@@ -79,20 +94,50 @@ if __name__ == "__main__":
     # print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
     # Run over everything
-    thestrats = cerebro.run(maxcpus=1)
+    thestrats = cerebro.run(maxcpus=6)
     thestrat = thestrats[0]
+
+    if 'buyHist' in dir(thestrat):
+        bh = thestrat.buyHist
+        print("Final Profit of RSI Buy strategy : {:2f}, Net {:2f}".format(
+            thestrat.finalProfit, thestrat.finalProfitNet))
+        print("Init Value: {}, Out Value: {:.2f}, Net Value: {:.2f}, Interest Expense: {:.2f}".format(thestrat.buyHist['InitValue'].count(
+        )*10000, thestrat.buyHist['OutValue'].sum(), thestrat.buyHist['NetValue'].sum(), (thestrat.buyHist['OutValue'] - thestrat.buyHist['NetValue']).sum()))
 
     print("Sharpe Ratio:", thestrat.analyzers.mysharpe.get_analysis())
     # Print out the final result
-    print("Final Portfolio Value: %.2f" % cerebro.broker.getvalue())
+    print("Ticker : %s" % filename)
+    if 'buyHist' in dir(thestrat):
+        print("Final Portfolio Value: %.2f %% (Pure: %.2f %%)" %
+              (thestrat.finalProfit, thestrat.finalProfitPure))
+    else:
+        print("Final Portfolio Value: %.2f won" % cerebro.broker.getvalue())
 
     # Plotting incredibly is a line operation
 
-    # cerebro.plot(iplot=False)
+    cerebro.plot(iplot=False)
 
     # cf.go_offline(connected=True)
-    b = Bokeh(style="bar")
-    cerebro.plot(b, iplot=False)
+
+    # b = Bokeh(style="bar")
+    # cerebro.plot(b, iplot=False)
+
     # py.offline.plot_mpl(result[0][0], filename="simple_candlestick.html")
     # plotly.offline.plot_mpl(result[0][0], filename="simple_candlestick.html")
     # pio.write_html(result[0][0], file="hello_world.html", auto_open=True)
+
+    # time.sleep(5)
+    # cerebro = bt.Cerebro(stdstats=False)
+    # cerebro.addstrategy(sc.RSIMomentum, printLog=True)
+    # cerebro.addobserver(bt.observers.Value)
+    # cerebro.addobserver(bt.observers.Trades)
+    # cerebro.addobserver(bt.observers.BuySell)
+    #
+    # df2 = pd.read_csv("./datas/coin/BTCUSDT.csv",
+    #                   parse_dates=True, index_col=0)
+    # data1 = bt.feeds.PandasData(dataname=df2)
+    # cerebro.adddata(data1)
+    #
+    # thestrats = cerebro.run(maxcpus=1)
+    # thestrat = thestrats[0]
+    # print("Final Portfolio Value: %.2f" % cerebro.broker.getvalue())
