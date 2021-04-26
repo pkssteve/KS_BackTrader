@@ -97,9 +97,11 @@ pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycodestyle==2.6.0
 pycparser @ file:///home/conda/feedstock_root/build_artifacts/pycparser_1593275161868/work
+pydocstyle==6.0.0
 pyflakes @ file:///home/ktietz/src/ci_ipy2/pyflakes_1612551159640/work
 Pygments @ file:///tmp/build/80754af9/pygments_1604103097372/work
 PyHamcrest==2.0.2
+pylama==7.7.1
 pylint @ file:///opt/concourse/worker/volumes/live/7ace7572-9cc8-42c5-6df9-c146c1e75e2a/volume/pylint_1617135820553/work
 pyOpenSSL==20.0.0
 pyparsing==2.4.7
@@ -121,6 +123,7 @@ Send2Trash==1.5.0
 service-identity==18.1.0
 simplejson==3.17.2
 six @ file:///opt/concourse/worker/volumes/live/5839b2d2-7415-4ff0-4c61-c4cddf798f7c/volume/six_1605205320479/work
+snowballstemmer==2.1.0
 soupsieve==2.1
 TA-Lib==0.4.19
 terminado @ file:///Users/runner/miniforge3/conda-bld/terminado_1609794230677/work
@@ -145,6 +148,7 @@ Werkzeug==1.0.1
 widgetsnbextension @ file:///Users/runner/miniforge3/conda-bld/widgetsnbextension_1605475527209/work
 wrapt==1.12.1
 yahoo-finance==1.4.0
+yapf==0.31.0
 yfinance==0.1.54
 zipp @ file:///tmp/build/80754af9/zipp_1604001098328/work
 zope.interface==5.2.0
