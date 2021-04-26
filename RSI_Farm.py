@@ -27,7 +27,7 @@ class RSIFarm(bt.Strategy):
         self.cursize = 0
 
         self.commission = 0.001
-        self.leverage = 2
+        self.leverage = 3
         self.interest = 0.001
         self.startcash = 100000
         self.curcash = 100000
@@ -317,9 +317,9 @@ class RSIFarm(bt.Strategy):
         if self.margincall == 1:
             self.curcash = 0
 
-        self.finalProfit = (self.buyHist['OutValue'].sum() / (self.buyHist['InitValue'].count()*10000)) * 100
-        self.finalProfitNet = (self.buyHist['NetValue'].sum() / (self.buyHist['InitValue'].count()*10000)) * 100
-        self.finalProfitPure = (self.buyHist['PureOutValue'].sum() / (self.buyHist['InitValueFix'].count()*10000)) * 100
+        self.finalProfit = (self.buyHist['OutValue'].sum() / (self.buyHist['InitValue'].count()*10000)) * 100 -100
+        self.finalProfitNet = (self.buyHist['NetValue'].sum() / (self.buyHist['InitValue'].count()*10000)) * 100 - 100
+        self.finalProfitPure = (self.buyHist['PureOutValue'].sum() / (self.buyHist['InitValueFix'].count()*10000)) * 100 - 100
 
 
 

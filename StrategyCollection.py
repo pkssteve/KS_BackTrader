@@ -36,7 +36,6 @@ class RSIMomentum(bt.Strategy):
         self.margincall = 0
         self.profitlistplus = pd.DataFrame()
         self.profitlistminus = pd.DataFrame()
-        self.buyHist = pd.DataFrame()
 
         # To keep track of pending orders and buy price/commission
         self.order = None
@@ -170,7 +169,7 @@ class RSIMomentum(bt.Strategy):
 
     def RSIstatemachine(self):
         retval = 0
-        rsiBoundry = 30
+        rsiBoundry = 40
         if self.RSIState["state"] == "not initialized":
             self.save_RSI("not started", len(self),
                           self.dataclose[0], self.RSI[0])
@@ -217,7 +216,7 @@ class RSIMomentum(bt.Strategy):
                                   self.dataclose[0], self.RSI[0])
 
             elif self.RSIState["state"] == "ready for buy":
-                if self.RSI[0] > self.RSI[-1] and self.RSI[0] > 70:
+                if self.RSI[0] > self.RSI[-1] and self.RSI[0] > 65:
                     retval = 1
                     self.save_RSI("hold position", len(self),
                                   self.dataclose[0], self.RSI[0])
@@ -226,7 +225,7 @@ class RSIMomentum(bt.Strategy):
                                   self.dataclose[0], self.RSI[0])
 
             elif self.RSIState["state"] == "hold position":
-                if self.dataclose[0] <= self.buyprice * 1.00:
+                if self.dataclose[0] <= self.buyprice * 0.97:
                     retval = -1
                     self.save_RSI("not started", len(self),
                                   self.dataclose[0], self.RSI[0])

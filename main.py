@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import pandas as pd
 from pandas_datareader import data as web
 
-import numpy
+import numpy as np
 import argparse
 import datetime  # For datetime objects
 import os.path  # To manage paths
@@ -38,8 +38,8 @@ if __name__ == "__main__":
     # Add a strategy
     # cerebro.addstrategy(bh.BuyAndHold, printLog=True)
     # cerebro.addstrategy(rs.RSISimple, printLog=True)
-    # cerebro.addstrategy(sc.RSIMomentum, printLog=True)
-    cerebro.addstrategy(rs.RSISimple, printLog=True)
+    cerebro.addstrategy(sc.RSIMomentum, printLog=True)
+    # cerebro.addstrategy(rf.RSIFarm, printLog=True)
 
     # strats = cerebro.optstrategy(
     #     sc.MyFirstStrategy,
@@ -61,10 +61,15 @@ if __name__ == "__main__":
 
     # df2 = pd.read_csv("./datas/coin/BTCUSDT.csv",
     #                   parse_dates=True, index_col=0)
-    filename = "./datas/STOCK/COKE.csv"
+    filename = "./datas/STOCK/AAPL.csv"
     df2 = pd.read_csv(filename, parse_dates=True, index_col=0)
     # df2 = df2["2018-03-01":]
-    df2 = df2["2020-09-12":"2021-04-12"]
+    df2 = df2["2020-01-12":"2020-12-12"]
+
+    mons = (df2.index[-1] - df2.index[0]) / np.timedelta64(1, 'M')
+    mons = int(round(mons, 0))
+    initialcash = 100000.0
+
     # df2 = df2[:"2021-04-12"]
     # df2 = df2[['open', 'high', 'low', 'close', 'Volume']]
     # format = '%Y-%m-%d %H:%M:%S'
@@ -80,9 +85,10 @@ if __name__ == "__main__":
 
     # Analyzer
     cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name="mysharpe")
+    cerebro.addanalyzer(bt.analyzers.DrawDown, _name="mdd")
 
     # Set our desired cash start
-    cerebro.broker.setcash(100000.0)
+    cerebro.broker.setcash(initialcash)
 
     # Add a FixedSize sizer according to the stake
     # cerebro.addsizer(bt.sizers.PercentSizer, percents=92)
@@ -97,21 +103,41 @@ if __name__ == "__main__":
     thestrats = cerebro.run(maxcpus=6)
     thestrat = thestrats[0]
 
+    fv = 0
+    marginfv = 0
+
     if 'buyHist' in dir(thestrat):
         bh = thestrat.buyHist
         print("Final Profit of RSI Buy strategy : {:2f}, Net {:2f}".format(
             thestrat.finalProfit, thestrat.finalProfitNet))
         print("Init Value: {}, Out Value: {:.2f}, Net Value: {:.2f}, Interest Expense: {:.2f}".format(thestrat.buyHist['InitValue'].count(
         )*10000, thestrat.buyHist['OutValue'].sum(), thestrat.buyHist['NetValue'].sum(), (thestrat.buyHist['OutValue'] - thestrat.buyHist['NetValue']).sum()))
+        marginfv = fv = thestrat.buyHist['NetValue'].sum()
+        fv = thestrat.buyHist['PureOutValue'].sum()
+        profit_margin = thestrat.finalProfit
+        profit = thestrat.finalProfitPure
+        initialcash = thestrat.buyHist['InitValue'].count()*10000
 
     print("Sharpe Ratio:", thestrat.analyzers.mysharpe.get_analysis())
+    print("Max Draw Down: %.2f" % ((thestrat.analyzers.mdd.get_analysis()).max.drawdown))
     # Print out the final result
     print("Ticker : %s" % filename)
+    print("InitValue : ", initialcash)
     if 'buyHist' in dir(thestrat):
-        print("Final Portfolio Value: %.2f %% (Pure: %.2f %%)" %
-              (thestrat.finalProfit, thestrat.finalProfitPure))
+        print("Final Portfolio Value: %.2f , %.2f percent (Pure: %.2f , %.2f %%)" %
+              (marginfv, thestrat.finalProfit, fv, thestrat.finalProfitPure))
+        cagr_margin = ((marginfv/initialcash)**(1/mons)-1)*100
+        cagr = ((fv / initialcash) ** (1 / mons) - 1)*100
+        print("CAGR(Month) : %.2f %% (Pure : %.2f %%)" % (cagr_margin, cagr))
     else:
-        print("Final Portfolio Value: %.2f won" % cerebro.broker.getvalue())
+        profit = (cerebro.broker.getvalue()/initialcash)*100-100
+        print("Final Portfolio Value: %.2f , %.2f percent" %  (cerebro.broker.getvalue(), profit))
+        cagr = ((cerebro.broker.getvalue()/initialcash)**(1/mons)-1)*100
+        print("CAGR(Month) : %.2f %%"  % cagr)
+
+
+
+
 
     # Plotting incredibly is a line operation
 

@@ -196,7 +196,7 @@ class RSISimple(bt.Strategy):
                 if self.RSI[0] < 30 or self.RSI[0] > 67:
                     self.save_RSI("not started", len(self),
                                   self.dataclose[0], self.RSI[0])
-                elif (self.RSI[0] > self.RSI[-1] and self.RSI[0] > 42):
+                elif (self.RSI[0] > self.RSI[-1] and self.RSI[0] > 40):
                     retval = 1
                     self.save_RSI("buy", len(self),
                                   self.dataclose[0], self.RSI[0])
