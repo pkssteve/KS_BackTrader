@@ -14,6 +14,7 @@ import os.path  # To manage paths
 import sys  # To find out the script name (in argv[0])
 import time
 import talib
+import matplotlib.pyplot as plt
 
 MACD_FAST_PERIOD = 14
 MACD_SLOW_PERIOD = 21
@@ -35,8 +36,8 @@ if __name__ == "__main__":
     mdf=pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2019-01-30"
-    end_date = "2019-12-30"
+    start_date = "2019-06-30"
+    end_date = "2020-10-30"
 
     coinprofit = {}
 
@@ -67,10 +68,9 @@ if __name__ == "__main__":
                     btc = temp.copy()
                 mdf = pd.concat([mdf, temp])
                 listdf.append(temp.copy())
-                print(coinname)
                 tickerCnt += 1
 
-    macd, macd_s, macd_hist = talib.MACDEXT(btc['Close'], fastperiod=MACD_FAST_PERIOD, fastmatype=talib.MA_Type.EMA, slowperiod=MACD_SLOW_PERIOD, slowmatype=talib.MA_Type.EMA, signalmatype=talib.MA_Type.EMA)
+    macd, macd_s, macd_hist = talib.MACDEXT(btc['Close'], fastperiod=14, fastmatype=talib.MA_Type.EMA, slowperiod=21, slowmatype=talib.MA_Type.EMA, signalmatype=talib.MA_Type.EMA, signalperiod = 2)
 
     btc['macd'] = macd
     btc['macd_s'] = macd_s
@@ -82,8 +82,8 @@ if __name__ == "__main__":
     buycash = 0
     port_value = 0
 
-    backwatch_days = 14
-    selldelay =0 # position holding
+    backwatch_days =14
+    selldelay =3 # position holding zero base value
     stepcnt = 0
 
     init_cash = 150000
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     interest = 0.0015
     interest_freq = 24
 
-    doShortTrade = 0
+    doShortTrade = 1
 
     vdf = pd.DataFrame()
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
                 if btc.loc[i, 'macd'] > btc.loc[i, 'macd_s'] and btc.loc[i, 'macd'] > btc.loc[i-1, 'macd']:
                     longlist = {}
                     shortlist = {}
-                    for j in range(0, 10):
+                    for j in range(0, 20):
                         longlist[mclose_p2.iloc[j]['Name']] = curOpen[curOpen['Name']==mclose_p2.iloc[j]['Name']].iloc[0,0]
 
                     position = 1
@@ -191,7 +191,7 @@ if __name__ == "__main__":
 
                 # save result
                 vdf = vdf.append(pd.DataFrame(
-                    {'Buy': buycash, 'Evaluation': port_value, 'Profit': (port_value - buycash) / buycash,
+                    {'Datetime':curdate,'Buy': buycash, 'Evaluation': port_value, 'Profit': (port_value - buycash) / buycash,
                      'PortValue': final_value}, index=[curdate]))
 
                 # init position
@@ -225,6 +225,16 @@ if __name__ == "__main__":
             print("[%s] Trades: %d, Price: %.4f, win rate: %.1f%%, +: %.1f%%, -: %.1f%%, Profit: %.2f%%" %
                   (cname, observation, close, win_rate, totalPlus*100, totalMinus*100, coin_earning_rate *100))
 
+    fig =  plt.figure()
+    ax1 = fig.add_subplot(311)
+    ax2 = fig.add_subplot(312, sharex=ax1)
+    ax3 = fig.add_subplot(313, sharex=ax1)
+    vdf = btc.merge(vdf, how='outer', on='Datetime')
+    btc[['Close', 'Datetime']].plot(ax=ax1)
+    btc[['macd', 'macd_s']].plot(ax=ax2)
+    vdf[['PortValue', 'Datetime']].plot('Datetime','PortValue', ax=ax3, marker='D', color='purple',markersize=3, linestyle='-')
 
-    vdf['PortValue'].plot()
+    ax1.legend(['BTC Price as reference'])
+    ax2.legend(['BTC MACD', 'BTC MACD Signal'])
+    ax3.legend(['Portfolio Value'])
     print("Init cash: %.2f, Final Value: %.2f, Profit: %.2f, MDD: %.1f" % (init_cash, final_value, ((final_value-init_cash)/init_cash)*100, mdd))

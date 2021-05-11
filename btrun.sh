@@ -15,13 +15,15 @@ do
     finalcash=`echo ${finalcash}`|bc
     echo "final cash : "${finalcash}
     diff=`echo ${finalcash}-${CASH}|bc`
-    totalgain=`echo ${totalgain}+${diff}|bc`
+    totalgain = `echo ${totalgain}+${diff}|bc`
 done
+
 finalProfit=`echo ${totalgain}+${totalcash}|bc`
 # finalRatio=`echo ${finalProfit} ${totalcash}|awk '{printf "%.2f", $1/$2}'`
 finalRatio=$((echo scale=2 ; echo ${finalProfit} / ${totalcash}) | bc)
 finalRatio=`echo ${finalRatio} 100|awk '{printf "%d", $1*$2}'`
 finalRatio=$((finalRatio-100))
+
 echo "Total profit : "${finalProfit}
 echo "Total cash : "${totalcash}
 echo "Earnings rate "${finalRatio}"%"

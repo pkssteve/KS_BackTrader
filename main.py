@@ -38,8 +38,8 @@ if __name__ == "__main__":
     # Add a strategy
     # cerebro.addstrategy(bh.BuyAndHold, printLog=True)
     # cerebro.addstrategy(rs.RSISimple, printLog=True)
-    cerebro.addstrategy(sc.RSIMomentum, printLog=True)
-    # cerebro.addstrategy(rf.RSIFarm, printLog=True)
+    # cerebro.addstrategy(sc.RSIMomentum, printLog=True)
+    cerebro.addstrategy(rf.RSIFarm, printLog=True)
 
     # strats = cerebro.optstrategy(
     #     sc.MyFirstStrategy,
@@ -54,10 +54,7 @@ if __name__ == "__main__":
     ALPHA_APIKEY = "3XBEGZUXVYMVD9NM"
 
     modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    datapath = (
-        # os.path.join(os.environ['CONDA_PREFIX'], 'datas/AAPL.csv')
-        "./datas/AAPL.csv"
-    )
+
 
     # df2 = pd.read_csv("./datas/coin/BTCUSDT.csv",
     #                   parse_dates=True, index_col=0)
@@ -119,7 +116,8 @@ if __name__ == "__main__":
         initialcash = thestrat.buyHist['InitValue'].count()*10000
 
     print("Sharpe Ratio:", thestrat.analyzers.mysharpe.get_analysis())
-    print("Max Draw Down: %.2f" % ((thestrat.analyzers.mdd.get_analysis()).max.drawdown))
+    print("Max Draw Down: %.2f" %
+          ((thestrat.analyzers.mdd.get_analysis()).max.drawdown))
     # Print out the final result
     print("Ticker : %s" % filename)
     print("InitValue : ", initialcash)
@@ -131,13 +129,10 @@ if __name__ == "__main__":
         print("CAGR(Month) : %.2f %% (Pure : %.2f %%)" % (cagr_margin, cagr))
     else:
         profit = (cerebro.broker.getvalue()/initialcash)*100-100
-        print("Final Portfolio Value: %.2f , %.2f percent" %  (cerebro.broker.getvalue(), profit))
+        print("Final Portfolio Value: %.2f , %.2f percent" %
+              (cerebro.broker.getvalue(), profit))
         cagr = ((cerebro.broker.getvalue()/initialcash)**(1/mons)-1)*100
-        print("CAGR(Month) : %.2f %%"  % cagr)
-
-
-
-
+        print("CAGR(Month) : %.2f %%" % cagr)
 
     # Plotting incredibly is a line operation
 
