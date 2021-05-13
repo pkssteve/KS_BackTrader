@@ -30,14 +30,15 @@ def resampleCandle(df, str):
 if __name__ == "__main__":
 
     basedir = "./datas/coin/RM_D"
+    # basedir = "./datas/KOSDAQ"
     copydir = "./datas/coin/RM_D"
     listdf = []
     btc =pd.DataFrame()
     mdf=pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2019-06-30"
-    end_date = "2020-10-30"
+    start_date = "2019-03-05"
+    end_date = "2021-03-30"
 
     coinprofit = {}
 
@@ -45,6 +46,8 @@ if __name__ == "__main__":
         for f in entries:
             filename = basedir + '/' + f.name
             coinname = f.name.split('.')[0]
+            if "DS_Store" in filename:
+                continue
 
             # temp = pd.read_csv(filename, parse_dates=True, index_col=0)
             # if temp[temp.isna()]['Open'].count() != 0:
@@ -53,6 +56,9 @@ if __name__ == "__main__":
             # retemp = retemp.fillna(method='ffill')
             # retemp.to_csv(copydir+'/'+coinname+'_D.csv')
 
+            # temp = pd.read_csv(filename, parse_dates=True)
+
+            print(filename)
             temp = pd.read_csv(filename, parse_dates=True)
             temp[['Name']] = coinname
 
@@ -82,8 +88,8 @@ if __name__ == "__main__":
     buycash = 0
     port_value = 0
 
-    backwatch_days =14
-    selldelay =3 # position holding zero base value
+    backwatch_days = 14
+    selldelay =0 # position holding zero based value
     stepcnt = 0
 
     init_cash = 150000
@@ -91,11 +97,11 @@ if __name__ == "__main__":
     max_cash = init_cash
     mdd = 0
     commision = 0.001
-    leverage = 1
+    leverage = 30
     interest = 0.0015
     interest_freq = 24
 
-    doShortTrade = 1
+    doShortTrade = 0
 
     vdf = pd.DataFrame()
 
