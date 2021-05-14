@@ -37,8 +37,8 @@ if __name__ == "__main__":
     mdf=pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2019-03-05"
-    end_date = "2021-03-30"
+    start_date = "2019-04-05"
+    end_date = "2019-09-30"
 
     coinprofit = {}
 
@@ -101,13 +101,13 @@ if __name__ == "__main__":
     interest = 0.0015
     interest_freq = 24
 
-    doShortTrade = 0
+    doShortTrade = 1
 
     vdf = pd.DataFrame()
 
     for i in range(0, len(btc)):
 
-        if i > len(btc[btc['macd'].isna()]) + 1:
+        if i > len(btc[btc['macd'].isna()]) + 30:
             curdate = btc.iloc[i, 0]
             if pd.isna(btc.loc[i, 'macd']) == True:
                 continue
