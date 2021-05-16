@@ -31,6 +31,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/RelativeMomentum_Day_KOS_Close.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/RelativeMomentum_Hour.py">
           <value>
             <Attribute>
