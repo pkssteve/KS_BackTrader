@@ -37,8 +37,8 @@ if __name__ == "__main__":
     mdf=pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2019-04-05"
-    end_date = "2019-09-30"
+    start_date = "2019-01-05"
+    end_date = "2020-01-05"
 
     coinprofit = {}
 
@@ -88,6 +88,7 @@ if __name__ == "__main__":
     buycash = 0
     port_value = 0
 
+    numStocks = 10
     backwatch_days = 14
     selldelay =0 # position holding zero based value
     stepcnt = 0
@@ -103,11 +104,13 @@ if __name__ == "__main__":
 
     doShortTrade = 1
 
+    callCount = 0
+
     vdf = pd.DataFrame()
 
     for i in range(0, len(btc)):
 
-        if i > len(btc[btc['macd'].isna()]) + 30:
+        if i > len(btc[btc['macd'].isna()]) + 15:
             curdate = btc.iloc[i, 0]
             if pd.isna(btc.loc[i, 'macd']) == True:
                 continue
@@ -124,6 +127,8 @@ if __name__ == "__main__":
             curOpen.index = range(0, len(curOpen))
             pastClose = mdf[mdf['Datetime'] == pastdate][['Close', 'Name']].copy()
             pastClose.index = range(0, len(pastClose))
+            curLow = mdf[mdf['Datetime'] == curdate][['Low', 'Name']].copy()
+            curLow.index = range(0, len(curLow))
 
             ## merge for diff rate caculation and descending sort by diff rate
             mclose = pd.merge(curClose, pastClose, how='left', on='Name')
@@ -143,7 +148,7 @@ if __name__ == "__main__":
                 if btc.loc[i, 'macd'] > btc.loc[i, 'macd_s'] and btc.loc[i, 'macd'] > btc.loc[i-1, 'macd']:
                     longlist = {}
                     shortlist = {}
-                    for j in range(0, 20):
+                    for j in range(0, numStocks):
                         longlist[mclose_p2.iloc[j]['Name']] = curOpen[curOpen['Name']==mclose_p2.iloc[j]['Name']].iloc[0,0]
 
                     position = 1
@@ -151,7 +156,7 @@ if __name__ == "__main__":
                 elif doShortTrade == 1:
                     longlist = {}
                     shortlist = {}
-                    for j in range(0, 10):
+                    for j in range(0,numStocks):
                         shortlist[mclose_m2.iloc[j]['Name']] = \
                         curOpen[curOpen['Name'] == mclose_m2.iloc[j]['Name']].iloc[0, 0]
 
@@ -172,6 +177,15 @@ if __name__ == "__main__":
                     profit = (cur_price - val) / val
                     result_value = unitbuy + (unitbuy * (profit * leverage))
                     result_value = max(result_value, 0)
+                    lowprice = curClose[curClose['Name'] == key].iloc[0, 0]
+                    curmdd = (lowprice - val) / val
+                    curmdd = curmdd *leverage
+                    if curmdd <= -0.5:
+                        result_value = unitbuy * 0.5
+                        callCount += 1
+
+
+
                     port_value += result_value
 
                     coinprofit[key].append(result_value)
@@ -193,7 +207,11 @@ if __name__ == "__main__":
                 final_value = (final_value + port_value) - ((port_value * leverage) * commision)
                 final_value = final_value - ((buycash*(leverage-1))*interest)
                 max_cash = max(final_value, max_cash)
-                mdd = min(mdd, ((final_value - max_cash)/max_cash)*100)
+                curdd = ((final_value - max_cash) / max_cash) * 100
+                if curdd < mdd:
+                    mdd_date = curdate
+                mdd = min(mdd, curdd)
+
 
                 # save result
                 vdf = vdf.append(pd.DataFrame(
@@ -244,3 +262,5 @@ if __name__ == "__main__":
     ax2.legend(['BTC MACD', 'BTC MACD Signal'])
     ax3.legend(['Portfolio Value'])
     print("Init cash: %.2f, Final Value: %.2f, Profit: %.2f, MDD: %.1f" % (init_cash, final_value, ((final_value-init_cash)/init_cash)*100, mdd))
+    print("Call count : %d" % callCount)
+    print("MDD date : %s" % mdd_date)
