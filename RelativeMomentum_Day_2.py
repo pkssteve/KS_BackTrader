@@ -19,6 +19,31 @@ import matplotlib.pyplot as plt
 MACD_FAST_PERIOD = 14
 MACD_SLOW_PERIOD = 21
 
+def updateResultDir(resultdir, dir):
+    if dir == 1:
+        if resultdir <= 0:
+            resultdir = 1
+        else:
+            resultdir += 1
+    else:
+        if resultdir >= 0:
+            resultdir = -1
+        else:
+            resultdir -= 1
+
+    return resultdir
+
+
+def adjustPositionRatio(curRatio, direction):
+    if direction == 1:
+        curRatio += 0.2
+        curRatio = min(curRatio, 0.8)
+    else:
+        curRatio -= 0.2
+        curRatio = max(curRatio, 0.6)
+
+    return curRatio
+
 def resampleCandle(df, str):
     tempdf = df[["Open"]].resample(str).first().copy()
     tempdf[["High"]] = df[["High"]].resample(str).max().copy()
@@ -37,8 +62,16 @@ if __name__ == "__main__":
     mdf=pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2019-01-05"
-    end_date = "2020-01-05"
+    start_date = "2020-03-30"
+    end_date = "2021-03-30"
+
+    # start_date = "2020-03-30"
+    # end_date = "2020-10-30"
+    # start_date = "2020-10-30"
+    # end_date = "2021-03-30"
+
+
+
 
     coinprofit = {}
 
@@ -76,7 +109,7 @@ if __name__ == "__main__":
                 listdf.append(temp.copy())
                 tickerCnt += 1
 
-    macd, macd_s, macd_hist = talib.MACDEXT(btc['Close'], fastperiod=14, fastmatype=talib.MA_Type.EMA, slowperiod=21, slowmatype=talib.MA_Type.EMA, signalmatype=talib.MA_Type.EMA, signalperiod = 2)
+    macd, macd_s, macd_hist = talib.MACDEXT(btc['Close'], fastperiod=2, fastmatype=talib.MA_Type.EMA, slowperiod=7, slowmatype=talib.MA_Type.EMA, signalmatype=talib.MA_Type.EMA, signalperiod = 2)
 
     btc['macd'] = macd
     btc['macd_s'] = macd_s
@@ -84,7 +117,7 @@ if __name__ == "__main__":
     position = 0
     longlist = {}
 
-    unitbuy = 10000
+
     buycash = 0
     port_value = 0
 
@@ -93,12 +126,16 @@ if __name__ == "__main__":
     selldelay =0 # position holding zero based value
     stepcnt = 0
 
-    init_cash = 150000
+
+    init_cash = 7000
+    invest_cash = init_cash
+    unitbuy = init_cash / numStocks
     final_value = init_cash
     max_cash = init_cash
     mdd = 0
     commision = 0.001
-    leverage = 30
+    leverage = 3
+    ratio = 0.8
     interest = 0.0015
     interest_freq = 24
 
@@ -106,19 +143,27 @@ if __name__ == "__main__":
 
     callCount = 0
 
+    resultdir = 0
+    dd = pd.DataFrame()
+
     vdf = pd.DataFrame()
 
     for i in range(0, len(btc)):
 
-        if i > len(btc[btc['macd'].isna()]) + 15:
+        if i > len(btc[btc['macd'].isna()]) + 30:
             curdate = btc.iloc[i, 0]
             if pd.isna(btc.loc[i, 'macd']) == True:
                 continue
 
             datetype = datetime.datetime.strptime(curdate, "%Y-%m-%d")
             pastdatetype = datetype - datetime.timedelta(days=backwatch_days)
+            predatetype = datetype - datetime.timedelta(days=1)
             pastdate = datetime.datetime.strftime(pastdatetype, "%Y-%m-%d")
 
+            # if predatetype.month != datetype.month:
+            #     init_cash += invest_cash
+            #     final_value = final_value + invest_cash
+            #     unitbuy = (final_value / numStocks) * ratio
 
             ## get close price in target old/cur datetime
             curClose = mdf[mdf['Datetime'] == curdate][['Close', 'Name']].copy()
@@ -129,6 +174,8 @@ if __name__ == "__main__":
             pastClose.index = range(0, len(pastClose))
             curLow = mdf[mdf['Datetime'] == curdate][['Low', 'Name']].copy()
             curLow.index = range(0, len(curLow))
+            curHigh = mdf[mdf['Datetime'] == curdate][['High', 'Name']].copy()
+            curHigh.index = range(0, len(curHigh))
 
             ## merge for diff rate caculation and descending sort by diff rate
             mclose = pd.merge(curClose, pastClose, how='left', on='Name')
@@ -145,14 +192,17 @@ if __name__ == "__main__":
 
             # buy
             if position == 0:
-                if btc.loc[i, 'macd'] > btc.loc[i, 'macd_s'] and btc.loc[i, 'macd'] > btc.loc[i-1, 'macd']:
+                if btc.loc[i, 'macd'] > btc.loc[i, 'macd_s']:
+                    # and btc.loc[i, 'macd'] > btc.loc[i-1, 'macd']:
                     longlist = {}
                     shortlist = {}
                     for j in range(0, numStocks):
                         longlist[mclose_p2.iloc[j]['Name']] = curOpen[curOpen['Name']==mclose_p2.iloc[j]['Name']].iloc[0,0]
 
-                    position = 1
-                    stepcnt = selldelay
+                    if len(longlist)>0:
+                        position = 1
+                        stepcnt = selldelay
+
                 elif doShortTrade == 1:
                     longlist = {}
                     shortlist = {}
@@ -160,8 +210,9 @@ if __name__ == "__main__":
                         shortlist[mclose_m2.iloc[j]['Name']] = \
                         curOpen[curOpen['Name'] == mclose_m2.iloc[j]['Name']].iloc[0, 0]
 
-                    position = 1
-                    stepcnt = selldelay
+                    if len(shortlist) > 0:
+                        position = 1
+                        stepcnt = selldelay
 
             ## make coin list for long position
             if position == 1 and stepcnt == 0:
@@ -175,15 +226,18 @@ if __name__ == "__main__":
                     buycash += unitbuy
                     cur_price = curClose[curClose['Name'] == key].iloc[0, 0]
                     profit = (cur_price - val) / val
-                    result_value = unitbuy + (unitbuy * (profit * leverage))
+                    result_value = unitbuy + ((unitbuy * leverage) *profit)
                     result_value = max(result_value, 0)
-                    lowprice = curClose[curClose['Name'] == key].iloc[0, 0]
+                    lowprice = curLow[curLow['Name'] == key].iloc[0, 0]
                     curmdd = (lowprice - val) / val
                     curmdd = curmdd *leverage
-                    if curmdd <= -0.5:
-                        result_value = unitbuy * 0.5
+                    if curmdd <= -0.8:
+                        result_value = unitbuy * 0.2
                         callCount += 1
 
+
+                    if profit < 0:
+                         dd = dd.append({"DD":(lowprice - val) / val}, ignore_index=True)
 
 
                     port_value += result_value
@@ -196,13 +250,23 @@ if __name__ == "__main__":
                         buycash += unitbuy
                         cur_price = curClose[curClose['Name'] == key].iloc[0, 0]
                         profit = (val - cur_price) / val
-                        result_value = unitbuy + (unitbuy * (profit * leverage))
-
+                        result_value = unitbuy + ((unitbuy * leverage) *profit)
                         result_value = max(result_value, 0)
+                        highprice = curHigh[curHigh['Name'] == key].iloc[0, 0]
+                        curmdd = (highprice - val) / val
+                        curmdd = curmdd * leverage
+                        if curmdd >= 0.8:
+                            result_value = unitbuy * 0.2
+                            callCount += 1
+
                         port_value += result_value
+
+                        # if profit > 0:
+                        #     dd = dd.append({"DD": (val - highprice) / val}, ignore_index=True)
 
                         coinprofit[key].append(result_value)
 
+                pre_fv =  final_value
                 final_value = (final_value - buycash) - ((buycash * leverage) * commision)
                 final_value = (final_value + port_value) - ((port_value * leverage) * commision)
                 final_value = final_value - ((buycash*(leverage-1))*interest)
@@ -210,8 +274,19 @@ if __name__ == "__main__":
                 curdd = ((final_value - max_cash) / max_cash) * 100
                 if curdd < mdd:
                     mdd_date = curdate
+                    mdd_value = final_value
                 mdd = min(mdd, curdd)
 
+                # if pre_fv * 0.9 >= final_value:
+                #     resultdir = updateResultDir(resultdir , 0)
+                #     if resultdir <= -2:
+                #         ratio = adjustPositionRatio(ratio, 0)
+                # elif pre_fv * 1.1 <= final_value:
+                #     resultdir = updateResultDir(resultdir, 1)
+                #     if resultdir >= 2:
+                #         ratio = adjustPositionRatio(ratio, 1)
+
+                unitbuy = (final_value / numStocks) * ratio
 
                 # save result
                 vdf = vdf.append(pd.DataFrame(
@@ -220,6 +295,8 @@ if __name__ == "__main__":
 
                 # init position
                 position = 0
+
+
 
             stepcnt -= 1
             stepcnt = max(stepcnt, 0)
@@ -256,11 +333,11 @@ if __name__ == "__main__":
     vdf = btc.merge(vdf, how='outer', on='Datetime')
     btc[['Close', 'Datetime']].plot(ax=ax1)
     btc[['macd', 'macd_s']].plot(ax=ax2)
-    vdf[['PortValue', 'Datetime']].plot('Datetime','PortValue', ax=ax3, marker='D', color='purple',markersize=3, linestyle='-')
+    vdf[['PortValue', 'Datetime']].plot('Datetime','PortValue', ax=ax3, marker='D', color='purple',markersize=3, linestyle='-', logy=True)
 
     ax1.legend(['BTC Price as reference'])
     ax2.legend(['BTC MACD', 'BTC MACD Signal'])
     ax3.legend(['Portfolio Value'])
-    print("Init cash: %.2f, Final Value: %.2f, Profit: %.2f, MDD: %.1f" % (init_cash, final_value, ((final_value-init_cash)/init_cash)*100, mdd))
+    print("Init cash: %.2f, Final Value: %.2f, Profit: %.2f%%, MDD: %.1f" % (init_cash, final_value, ((final_value-init_cash)/init_cash)*100, mdd))
     print("Call count : %d" % callCount)
-    print("MDD date : %s" % mdd_date)
+    print("MDD date : %s, MDD_PortValue : %.2f(%.2f%%)" % (mdd_date, mdd_value, ((mdd_value-init_cash)/init_cash)*100))
