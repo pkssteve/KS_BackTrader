@@ -55,14 +55,16 @@ def resampleCandle(df, str):
 if __name__ == "__main__":
 
     basedir = "./datas/coin/RM_D"
+    fileBTC1hour = "./datas/coin/RM/BTCUSDT.csv"
     # basedir = "./datas/KOSDAQ"
-    copydir = "./datas/coin/RM_D"
+    copydir = "./datas/coin/RM"
     listdf = []
     btc =pd.DataFrame()
     mdf=pd.DataFrame()
+    mdf_H = pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2020-03-30"
+    start_date = "2019-03-01"
     end_date = "2021-03-30"
 
     # start_date = "2020-03-30"
@@ -70,6 +72,10 @@ if __name__ == "__main__":
     # start_date = "2020-10-30"
     # end_date = "2021-03-30"
 
+    hourstr = "01:00:00"
+    btc1h = pd.read_csv(fileBTC1hour, parse_dates=True)
+    btc1h = btc1h[btc1h['Datetime'].str.contains(hourstr)]
+    btc1h.index = range(0, len(btc1h))
 
 
 
@@ -78,7 +84,7 @@ if __name__ == "__main__":
     with os.scandir(basedir) as entries:
         for f in entries:
             filename = basedir + '/' + f.name
-            coinname = f.name.split('.')[0]
+            coinname = f.name.split('.')[0].replace("_D", "")
             if "DS_Store" in filename:
                 continue
 
@@ -96,6 +102,7 @@ if __name__ == "__main__":
             temp[['Name']] = coinname
 
 
+
             coinprofit[coinname] = []
 
             if (datetime.datetime.strptime(temp.loc[0,'Datetime'], "%Y-%m-%d") <= datetime.datetime.strptime(start_date, "%Y-%m-%d") and \
@@ -109,9 +116,31 @@ if __name__ == "__main__":
                 listdf.append(temp.copy())
                 tickerCnt += 1
 
-    macd, macd_s, macd_hist = talib.MACDEXT(btc['Close'], fastperiod=2, fastmatype=talib.MA_Type.EMA, slowperiod=7, slowmatype=talib.MA_Type.EMA, signalmatype=talib.MA_Type.EMA, signalperiod = 2)
+    ma5 = talib.MA(btc['Close'], timeperiod = 10, matype = talib.MA_Type.EMA)
+    macd, macd_s, macd_hist = talib.MACDEXT(btc['Close'], fastperiod=4, fastmatype=talib.MA_Type.EMA, slowperiod=12, slowmatype=talib.MA_Type.EMA, signalmatype=talib.MA_Type.EMA, signalperiod = 4)
+
+    with os.scandir(copydir) as entries:
+        for f in entries:
+            filename = copydir + '/' + f.name
+            coinname = f.name.split('.')[0]
+            if "DS_Store" in filename:
+                continue
+
+
+            temp = pd.read_csv(filename, parse_dates=True)
+            temp[['Name']] = coinname
+            temp = temp[temp['Datetime'].str.contains(hourstr)]
+            temp.index = range(0, len(temp))
+
+            if (datetime.datetime.strptime(temp.loc[0,'Datetime'], ("%Y-%m-%d "+hourstr)) <= datetime.datetime.strptime(start_date+" "+hourstr, ("%Y-%m-%d "+hourstr)) and \
+                    datetime.datetime.strptime(temp.loc[len(temp)-1, 'Datetime'], ("%Y-%m-%d "+hourstr)) > datetime.datetime.strptime(end_date+" "+hourstr, ("%Y-%m-%d "+hourstr))):
+                temp = temp[temp['Datetime'] >= start_date]
+                temp = temp[temp['Datetime'] <= end_date]
+                temp.index = range(0, len(temp))
+                mdf_H = pd.concat([mdf_H, temp])
 
     btc['macd'] = macd
+    btc['ma5'] = ma5
     btc['macd_s'] = macd_s
     linecnt = 0
     position = 0
@@ -121,25 +150,26 @@ if __name__ == "__main__":
     buycash = 0
     port_value = 0
 
-    numStocks = 10
-    backwatch_days = 14
+    numStocks = 3
+    backwatch_days = 7
     selldelay =0 # position holding zero based value
     stepcnt = 0
 
 
     init_cash = 7000
     invest_cash = init_cash
-    unitbuy = init_cash / numStocks
+    ratio = 0.95
+    unitbuy = (init_cash / numStocks) * ratio
     final_value = init_cash
     max_cash = init_cash
     mdd = 0
     commision = 0.001
-    leverage = 3
-    ratio = 0.8
+    leverage = 2.5
+
     interest = 0.0015
     interest_freq = 24
 
-    doShortTrade = 1
+    doShortTrade = 0
 
     callCount = 0
 
@@ -176,6 +206,8 @@ if __name__ == "__main__":
             curLow.index = range(0, len(curLow))
             curHigh = mdf[mdf['Datetime'] == curdate][['High', 'Name']].copy()
             curHigh.index = range(0, len(curHigh))
+            curClose_H = mdf_H[mdf_H['Datetime'] == (curdate+" "+hourstr)][['Close', 'Name']].copy()
+
 
             ## merge for diff rate caculation and descending sort by diff rate
             mclose = pd.merge(curClose, pastClose, how='left', on='Name')
@@ -192,23 +224,33 @@ if __name__ == "__main__":
 
             # buy
             if position == 0:
-                if btc.loc[i, 'macd'] > btc.loc[i, 'macd_s']:
+                cdf = btc.loc[i - 30:i-1, 'Close']
+                cdf = cdf.append(pd.Series(btc1h[btc1h['Datetime']==curdate+" "+hourstr]['Close']), ignore_index = True)
+                macd2, macd_s2, macd_hist2 = talib.MACDEXT(cdf, fastperiod=7, fastmatype=talib.MA_Type.EMA,
+                                                        slowperiod=20, slowmatype=talib.MA_Type.EMA,
+                                                        signalmatype=talib.MA_Type.EMA, signalperiod=10)
+                if macd2.iloc[-1] > macd_s2.iloc[-1]:
+                    # and macd2.iloc[-1] > macd2.iloc[-2]:
+                # if btc.loc[i-1, 'ma5'] <= btc.loc[i-1, 'Close']:
                     # and btc.loc[i, 'macd'] > btc.loc[i-1, 'macd']:
                     longlist = {}
                     shortlist = {}
                     for j in range(0, numStocks):
-                        longlist[mclose_p2.iloc[j]['Name']] = curOpen[curOpen['Name']==mclose_p2.iloc[j]['Name']].iloc[0,0]
+                        if len(curClose_H[curClose_H['Name']==mclose_p2.iloc[j]['Name']]) > 0:
+                            longlist[mclose_p2.iloc[j]['Name']] = curClose_H[curClose_H['Name']==mclose_p2.iloc[j]['Name']].iloc[0,0]
+                        else:
+                            print("no coin")
 
                     if len(longlist)>0:
                         position = 1
                         stepcnt = selldelay
 
-                elif doShortTrade == 1:
+                elif doShortTrade == 1 and macd2.iloc[-1] < macd_s2.iloc[-1] and macd2.iloc[-1] < macd2.iloc[-2]:
                     longlist = {}
                     shortlist = {}
                     for j in range(0,numStocks):
-                        shortlist[mclose_m2.iloc[j]['Name']] = \
-                        curOpen[curOpen['Name'] == mclose_m2.iloc[j]['Name']].iloc[0, 0]
+                        if len(curClose_H[curClose_H['Name'] == mclose_m2.iloc[j]['Name']]) > 0:
+                            shortlist[mclose_m2.iloc[j]['Name']] = curClose_H[curClose_H['Name']==mclose_m2.iloc[j]['Name']].iloc[0,0]
 
                     if len(shortlist) > 0:
                         position = 1
@@ -230,14 +272,14 @@ if __name__ == "__main__":
                     result_value = max(result_value, 0)
                     lowprice = curLow[curLow['Name'] == key].iloc[0, 0]
                     curmdd = (lowprice - val) / val
-                    curmdd = curmdd *leverage
+                    curmdd = curmdd * leverage
                     if curmdd <= -0.8:
                         result_value = unitbuy * 0.2
                         callCount += 1
 
 
                     if profit < 0:
-                         dd = dd.append({"DD":(lowprice - val) / val}, ignore_index=True)
+                         dd = dd.append({"DD":profit, 'Datetime':curdate}, ignore_index=True)
 
 
                     port_value += result_value
