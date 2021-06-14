@@ -140,7 +140,7 @@ if __name__ == "__main__":
     position_day = 0
     longlist = {}
 
-    numStock = 50
+    numStock = 10
     unitbuy = 10000
     buycash = 0
     port_value = 0
@@ -159,6 +159,7 @@ if __name__ == "__main__":
     interest_freq = 24
 
     doShortTrade = 0
+
 
     boughtStockLong = 0
 
@@ -255,6 +256,8 @@ if __name__ == "__main__":
                 max_cash = max(final_value, max_cash)
                 mdd = min(mdd, ((final_value - max_cash)/max_cash)*100)
 
+                unitbuy = int(final_value / numStock)
+
                 # save result
                 vdf = vdf.append(pd.DataFrame(
                     {'Datetime':curdate,'Buy': buycash, 'Evaluation': port_value, 'Profit': (port_value - buycash) / buycash,
@@ -268,7 +271,7 @@ if __name__ == "__main__":
                 boughtStockLong = 0
 
             # buy
-            if position_day == 0 or (position_day != 0 and position_day.strftime("%Y-%m-%d") == datetype.strftime("%Y-%m-%d")):
+            if position_day == 0:
             # if position_day == 0 :
                 if btc2_t.loc[0,'macd'] > btc2_t.loc[0,'macd_s']:
                     if boughtStockLong < numStock:
