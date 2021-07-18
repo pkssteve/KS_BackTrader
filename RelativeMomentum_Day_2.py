@@ -65,7 +65,7 @@ if __name__ == "__main__":
     tickerCnt = 0
 
     start_date = "2019-03-01"
-    end_date = "2021-03-30"
+    end_date = "2021-02-28"
 
     # start_date = "2020-03-30"
     # end_date = "2020-10-30"
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     port_value = 0
 
     numStocks = 3
-    backwatch_days = 7
+    backwatch_days = 9
     selldelay =0 # position holding zero based value
     stepcnt = 0
 
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     max_cash = init_cash
     mdd = 0
     commision = 0.001
-    leverage = 2.5
+    leverage = 2.7
 
     interest = 0.0015
     interest_freq = 24

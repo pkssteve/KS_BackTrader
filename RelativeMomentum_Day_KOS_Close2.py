@@ -15,6 +15,7 @@ import sys  # To find out the script name (in argv[0])
 import time
 import talib
 import matplotlib.pyplot as plt
+import json
 
 MACD_FAST_PERIOD = 14
 MACD_SLOW_PERIOD = 21
@@ -27,18 +28,29 @@ def resampleCandle(df, str):
     tempdf[["Volume"]] = df[["Volume"]].resample(str).sum().copy()
     return tempdf
 
+def getTargetCandle(df, targetDT, listColumns, timeformat):
+    strDT = targetDT.strftime(timeformat)
+    targetdf = df[df['Datetime'] == strDT][listColumns]
+    if len(targetdf) == 0:
+        targetDT = targetDT - datetime.timedelta(days=1)
+        targetdf = getTargetCandle(df, targetDT, listColumns, timeformat)
+
+    targetdf.index = range(0, len(targetdf))
+    targetdf = targetdf.copy()
+    return targetdf
+
 if __name__ == "__main__":
 
     # basedir = "./datas/coin/RM_D"
-    basedir = "./datas/KOSDAQ"
+    basedir = "./datas/KOSDAQ_1D_3"
     copydir = "./datas/coin/RM_D"
     listdf = []
     btc =pd.DataFrame()
     mdf=pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2018-03-05"
-    end_date = "2021-04-30"
+    start_date = "2010-03-05"
+    end_date = "2017-04-30"
 
     coinprofit = {}
 
@@ -101,6 +113,9 @@ if __name__ == "__main__":
     YoYReturn = pd.DataFrame()
     lastdt = datetime.datetime.strptime(start_date, "%Y-%m-%d")
 
+    history = pd.DataFrame()
+    monitor_date = "2016-08-01"
+
     vdf = pd.DataFrame()
     invalidCnt = 0
     for i in range(0, len(btc)):
@@ -127,10 +142,14 @@ if __name__ == "__main__":
             curClose.index = range(0, len(curClose))
             curOpen = mdf[mdf['Datetime'] == curdate][['Open', 'Name']].copy()
             curOpen.index = range(0, len(curOpen))
-            pastClose = mdf[mdf['Datetime'] == pastdate][['Close', 'Name']].copy()
+            curHigh = mdf[mdf['Datetime'] == curdate][['High', 'Name']].copy()
+            curHigh.index = range(0, len(curHigh))
+            pastClose = getTargetCandle(mdf, pastdatetype, ['Datetime', 'Close', 'Name'], "%Y-%m-%d")
             pastClose.index = range(0, len(pastClose))
-            preClose = mdf[mdf['Datetime'] == predate][['Close', 'Name']].copy()
+            preClose = getTargetCandle(mdf, predatedt, ['Datetime', 'Close', 'Name'], "%Y-%m-%d")
             preClose.index = range(0, len(preClose))
+
+
 
             ## merge for diff rate caculation and descending sort by diff rate
             mclose = pd.merge(curClose, pastClose, how='left', on='Name')
@@ -154,7 +173,9 @@ if __name__ == "__main__":
                 buycash = 0
                 port_value = 0
 
-
+                sellprices = []
+                longlist = sorted(longlist.items())
+                longlist = dict(longlist)
                 for key, val in longlist.items():
                     buycash += unitbuy
                     if len(curOpen[curOpen['Name'] == key]) > 0:
@@ -163,11 +184,19 @@ if __name__ == "__main__":
                         result_value = unitbuy + (unitbuy * (profit * leverage))
                         result_value = max(result_value, 0)
                         port_value += result_value
+
+                        sellprices.append(cur_price)
                     else:
                         invalidCnt += 1
                         result_value = unitbuy
 
                     coinprofit[key].append(result_value)
+
+                if len(longlist):
+                    trades_str = str(longlist)
+                    history = history.append(
+                        {"Date": curdate, "Trades": trades_str, "SellPrices": str(sellprices)}, ignore_index=True)
+
 
                 if doShortTrade==1:
                     for key, val in shortlist.items():
@@ -196,6 +225,7 @@ if __name__ == "__main__":
                 mdd = min(mdd, curdd)
 
                 unitbuy = (final_value / numStock) * 0.8
+                # unitbuy = (final_value / (numStock/2)) * 0.8
 
                 # save result
                 vdf = vdf.append(pd.DataFrame(
@@ -211,20 +241,38 @@ if __name__ == "__main__":
                     # and btc.loc[i, 'macd'] > btc.loc[i - 1, 'macd']:
                     longlist = {}
                     shortlist = {}
-                    for j in range(0, numStock):
-                        longlist[mclose_p.iloc[j]['Name']] = \
-                        curClose[curClose['Name'] == mclose_p.iloc[j]['Name']].iloc[0, 0]
+                    for j in range(10, len(curOpen)):
+                        stockname = mclose_p.iloc[j]['Name']
+                        curopen = curOpen[curOpen['Name'] == stockname].iloc[0, 0]
+                        curhigh = curHigh[curHigh['Name'] == stockname].iloc[0, 0]
+                        curclose = curClose[curClose['Name'] == stockname].iloc[0, 0]
+                        if curhigh == curopen:
+                            continue
+                        ibs = (curclose-curopen)/(curhigh-curopen)
 
-                    position = 1
-                    position_day = datetime.datetime.strptime(curdate, "%Y-%m-%d")
-                    stepcnt = selldelay
+                        # if ibs <= 0.3:
+                        longlist[stockname] = curclose
+
+                        if len(longlist) == numStock:
+                            break
+
+
+                    if len(longlist) > 0:
+                        position = 1
+                        position_day = datetime.datetime.strptime(curdate, "%Y-%m-%d")
+                        stepcnt = selldelay
+
+                    if monitor_date == datetype.strftime("%Y-%m-%d"):
+                        mclose_p.to_csv("diff_1d.csv")
+                        # exit()
 
                 elif doShortTrade == 1:
                     longlist = {}
                     shortlist = {}
                     for j in range(0, numStock):
-                        shortlist[mclose_m.iloc[j]['Name']] = \
-                            curClose[curClose['Name'] == mclose_m.iloc[j]['Name']].iloc[0, 0]
+                        stockname =mclose_m.iloc[j]['Name']
+                        shortlist[stockname] = \
+                            curClose[curClose['Name'] == stockname].iloc[0, 0]
 
                     position = 1
                     position_day = datetime.datetime.strptime(curdate, "%Y-%m-%d")
@@ -259,8 +307,10 @@ if __name__ == "__main__":
     #
     #         print("[%s] Trades: %d, Price: %.4f, win rate: %.1f%%, +: %.1f%%, -: %.1f%%, Profit: %.2f%%" %
     #               (cname, observation, close, win_rate, totalPlus*100, totalMinus*100, coin_earning_rate *100))
+
     pct = (final_value - start_cash) / start_cash
-    YoYReturn = YoYReturn.append({"Year": datetype.year, "Profit": pct}, ignore_index=True)
+    if datetype is not None:
+        YoYReturn = YoYReturn.append({"Year": datetype.year, "Profit": pct}, ignore_index=True)
 
 
     start_date_dt = datetime.datetime.strptime(start_date, "%Y-%m-%d")

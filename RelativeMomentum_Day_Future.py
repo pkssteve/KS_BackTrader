@@ -46,12 +46,13 @@ if __name__ == "__main__":
     listdf = []
     btc =pd.DataFrame()
     mdf=pd.DataFrame()
+    mdf_H = pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2020-03-30"
-    end_date = "2021-01-30"
+    start_date = "2020-03-01"
+    end_date = "2021-03-30"
 
-    hourstr = "20:00:00"
+    hourstr = "00:00:00"
     btc1h = pd.read_csv(fileBTC1hour, parse_dates=True)
     btc1h = btc1h[btc1h['Datetime'].str.contains(hourstr)]
     btc1h.index = range(0, len(btc1h))
@@ -105,7 +106,7 @@ if __name__ == "__main__":
     port_value = 0
 
     numStocks = 5
-    backwatch_days = 7
+    backwatch_days = 9
     selldelay =0 # position holding zero based value
     stepcnt = 0
 
@@ -116,12 +117,12 @@ if __name__ == "__main__":
     max_cash = init_cash
     mdd = 0
     commision = 0.001
-    leverage = 4
-    ratio = 0.8
+    leverage = 2.5
+    ratio = 0.90
     interest = 0.0015
     interest_freq = 24
 
-    doShortTrade = 1
+    doShortTrade = 0
     callCount = 0
 
     vdf = pd.DataFrame()
@@ -156,6 +157,7 @@ if __name__ == "__main__":
             curLow.index = range(0, len(curLow))
             curHigh = mdf[mdf['Datetime'] == curdate][['High', 'Name']].copy()
             curHigh.index = range(0, len(curHigh))
+            # curClose_H = mdf_H[mdf_H['Datetime'] == (curdate + " " + hourstr)][['Close', 'Name']].copy()
 
             ## merge for diff rate caculation and descending sort by diff rate
             mclose = pd.merge(curClose, pastClose, how='left', on='Name')
@@ -178,6 +180,7 @@ if __name__ == "__main__":
                 macd2, macd_s2, macd_hist2 = talib.MACDEXT(cdf, fastperiod=7, fastmatype=talib.MA_Type.EMA,
                                                            slowperiod=14, slowmatype=talib.MA_Type.EMA,
                                                            signalmatype=talib.MA_Type.EMA, signalperiod=9)
+
                 if macd2.iloc[-1] > macd_s2.iloc[-1] :  # last macd, macd signal
                     # and btc.loc[i, 'macd'] > btc.loc[i-1, 'macd']:
                     longlist = {}

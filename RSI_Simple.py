@@ -28,7 +28,7 @@ class RSISimple(bt.Strategy):
         self.cursize = 0
 
         self.commission = 0.001
-        self.leverage = 2
+        self.leverage = 1
         self.interest = 0.001
         self.startcash = 100000
         self.curcash = 100000
@@ -171,7 +171,7 @@ class RSISimple(bt.Strategy):
     def RSIstatemachine(self):
         retval = 0
         rsiBoundry = 30
-        rsiGapValue = 42
+        rsiGapValue = 30
         # rsiBoundry = 40
         # rsiGapValue = 50
         if self.RSIState["state"] == "not initialized":
@@ -183,6 +183,7 @@ class RSISimple(bt.Strategy):
             if self.RSIState["state"] == "not started":
                 # and self.RSI[0] > 30
 
+                # if (self.RSI[0] > self.RSI[-1] and self.RSI[-1] <= rsiBoundry and self.RSI[0] > rsiGapValue):
                 if (self.RSI[0] > self.RSI[-1] and self.RSI[-1] <= rsiBoundry and self.RSI[0] > rsiGapValue):
                     self.save_RSI("RSI momentum", len(self),
                                   self.dataclose[0], self.RSI[0])
