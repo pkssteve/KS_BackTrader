@@ -27,7 +27,7 @@ class RSIMomentum(bt.Strategy):
         self.cursize = 0
 
         self.commission = 0.001
-        self.leverage = 2
+        self.leverage = 1
         self.interest = 0.001
         self.startcash = 100000
         self.curcash = 100000
@@ -169,7 +169,7 @@ class RSIMomentum(bt.Strategy):
 
     def RSIstatemachine(self):
         retval = 0
-        rsiBoundry = 40
+        rsiBoundry = 30
         if self.RSIState["state"] == "not initialized":
             self.save_RSI("not started", len(self),
                           self.dataclose[0], self.RSI[0])

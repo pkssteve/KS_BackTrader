@@ -30,6 +30,9 @@ import StrategyCollection as sc
 import RSI_Simple as rs
 import Buy_Hold as bh
 import RSI_Farm as rf
+import ST20_10 as tt
+import ST_MA5 as ma
+import ST_Volatibility as vol
 
 if __name__ == "__main__":
     # Create a cerebro entity
@@ -38,8 +41,11 @@ if __name__ == "__main__":
     # Add a strategy
     # cerebro.addstrategy(bh.BuyAndHold, printLog=True)
     # cerebro.addstrategy(rs.RSISimple, printLog=True)
-    cerebro.addstrategy(sc.RSIMomentum, printLog=True)
+    # cerebro.addstrategy(sc.RSIMomentum, printLog=True)
     # cerebro.addstrategy(rf.RSIFarm, printLog=True)
+    # cerebro.addstrategy(tt.TwentyTen, printLog=True)
+    # cerebro.addstrategy(ma.MA5, printLog=True)
+    cerebro.addstrategy(vol.VOLA, printLog=True)
 
     # strats = cerebro.optstrategy(
     #     sc.MyFirstStrategy,
@@ -54,17 +60,15 @@ if __name__ == "__main__":
     ALPHA_APIKEY = "3XBEGZUXVYMVD9NM"
 
     modpath = os.path.dirname(os.path.abspath(sys.argv[0]))
-    datapath = (
-        # os.path.join(os.environ['CONDA_PREFIX'], 'datas/AAPL.csv')
-        "./datas/AAPL.csv"
-    )
+
 
     # df2 = pd.read_csv("./datas/coin/BTCUSDT.csv",
     #                   parse_dates=True, index_col=0)
-    filename = "./datas/STOCK/AAPL.csv"
+    filename = "./datas/coin/RM/BTCUSDT.csv"
+    # df2 = pd.read_csv(filename, parse_dates=True, index_col=1)
     df2 = pd.read_csv(filename, parse_dates=True, index_col=0)
     # df2 = df2["2018-03-01":]
-    df2 = df2["2020-01-12":"2020-12-12"]
+    df2 = df2["2019-01-02":]
 
     mons = (df2.index[-1] - df2.index[0]) / np.timedelta64(1, 'M')
     mons = int(round(mons, 0))
@@ -119,7 +123,8 @@ if __name__ == "__main__":
         initialcash = thestrat.buyHist['InitValue'].count()*10000
 
     print("Sharpe Ratio:", thestrat.analyzers.mysharpe.get_analysis())
-    print("Max Draw Down: %.2f" % ((thestrat.analyzers.mdd.get_analysis()).max.drawdown))
+    print("Max Draw Down: %.2f" %
+          ((thestrat.analyzers.mdd.get_analysis()).max.drawdown))
     # Print out the final result
     print("Ticker : %s" % filename)
     print("InitValue : ", initialcash)
@@ -131,13 +136,10 @@ if __name__ == "__main__":
         print("CAGR(Month) : %.2f %% (Pure : %.2f %%)" % (cagr_margin, cagr))
     else:
         profit = (cerebro.broker.getvalue()/initialcash)*100-100
-        print("Final Portfolio Value: %.2f , %.2f percent" %  (cerebro.broker.getvalue(), profit))
+        print("Final Portfolio Value: %.2f , %.2f percent" %
+              (cerebro.broker.getvalue(), profit))
         cagr = ((cerebro.broker.getvalue()/initialcash)**(1/mons)-1)*100
-        print("CAGR(Month) : %.2f %%"  % cagr)
-
-
-
-
+        print("CAGR(Month) : %.2f %%" % cagr)
 
     # Plotting incredibly is a line operation
 
