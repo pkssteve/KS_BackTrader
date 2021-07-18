@@ -1,6 +1,7 @@
 {
-    "python.pythonPath": "/Users/stevepark/anaconda3/envs/KS_BackTrader/bin/python",
-    "python.linting.flake8Enabled": false,
-    "python.linting.enabled": false,
-    "python.linting.pylintEnabled": true
+    "python.pythonPath": "/Users/kyungsoonpark/anaconda3/envs/KS_BackTrader/bin/python",
+    "python.linting.flake8Enabled": true,
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.banditEnabled": false
 }

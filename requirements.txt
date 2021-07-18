@@ -1,13 +1,13 @@
 appdirs==1.4.4
 appnope==0.1.0
-argon2-cffi @ file:///Users/runner/miniforge3/conda-bld/argon2-cffi_1610522650583/work
+argon2-cffi
 astroid @ file:///opt/concourse/worker/volumes/live/a8a8b2be-963f-4e30-7c46-4aecaf981ab4/volume/astroid_1613500845571/work
 async-generator==1.10
 asyncio==3.4.3
 attrs @ file:///tmp/build/80754af9/attrs_1604765588209/work
 autobahn==20.7.1
 Automat==20.2.0
-autopep8 @ file:///tmp/build/80754af9/autopep8_1596578164842/work
+autopep8
 backcall==0.2.0
 backtrader==1.9.76.123
 backtrader-plotting==1.1.0
@@ -15,7 +15,7 @@ beautifulsoup4==4.9.3
 binance==0.3
 binance-client==1.0.0
 black==19.10b0
-bleach @ file:///home/conda/feedstock_root/build_artifacts/bleach_1612213472466/work
+bleach
 bokeh==2.0.2
 bs4==0.0.1
 certifi==2020.12.5
@@ -31,8 +31,8 @@ cufflinks==0.17.3
 cycler==0.10.0
 dateparser==1.0.0
 decorator==4.4.2
-defusedxml @ file:///home/conda/feedstock_root/build_artifacts/defusedxml_1615232257335/work
-entrypoints @ file:///home/conda/feedstock_root/build_artifacts/entrypoints_1605121927639/work/dist/entrypoints-0.3-py2.py3-none-any.whl
+defusedxml
+entrypoints
 finance-datareader==0.9.14
 flake8 @ file:///tmp/build/80754af9/flake8_1615834841867/work
 Flask==1.1.2
