@@ -33,6 +33,9 @@ import RSI_Farm as rf
 import ST20_10 as tt
 import ST_MA5 as ma
 import ST_Volatibility as vol
+import ST_RSI_Pingpong as rp
+import ST_Williams_R as wr
+import ST_Williams_R2 as wr2
 
 if __name__ == "__main__":
     # Create a cerebro entity
@@ -45,8 +48,11 @@ if __name__ == "__main__":
     # cerebro.addstrategy(rf.RSIFarm, printLog=True)
     # cerebro.addstrategy(tt.TwentyTen, printLog=True)
     # cerebro.addstrategy(ma.MA5, printLog=True)
-    cerebro.addstrategy(vol.VOLA, printLog=True)
-
+    # cerebro.addstrategy(vol.VOLA, printLog=True)
+    # cerebro.addstrategy(rp.RSIPP, printLog=True)
+    cerebro.addstrategy(wr.WillR, printLog=True)
+    # cerebro.addstrategy(wr2.WillR2, printLog=True)
+    #
     # strats = cerebro.optstrategy(
     #     sc.MyFirstStrategy,
     #     momentumLasting=range(5,6),R
@@ -64,11 +70,12 @@ if __name__ == "__main__":
 
     # df2 = pd.read_csv("./datas/coin/BTCUSDT.csv",
     #                   parse_dates=True, index_col=0)
-    filename = "./datas/coin/RM/BTCUSDT.csv"
+    # filename = "./datas/coin/RM_D/BTCUSDT_D.csv"
+    filename = "./datas/STOCK/AAPL.csv"
     # df2 = pd.read_csv(filename, parse_dates=True, index_col=1)
     df2 = pd.read_csv(filename, parse_dates=True, index_col=0)
     # df2 = df2["2018-03-01":]
-    df2 = df2["2019-01-02":]
+    # df2 = df2["2019-01-02":]
 
     mons = (df2.index[-1] - df2.index[0]) / np.timedelta64(1, 'M')
     mons = int(round(mons, 0))

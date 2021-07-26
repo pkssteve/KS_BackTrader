@@ -39,7 +39,7 @@ class TwentyTen(bt.Strategy):
         self.profitlistplus = pd.DataFrame()
         self.profitlistminus = pd.DataFrame()
 
-        self.longwindow = 10
+        self.longwindow = 20
         self.sellwindow = 10
 
         self.queue20 = deque(maxlen=self.longwindow)
@@ -191,10 +191,15 @@ class TwentyTen(bt.Strategy):
             self.save_RSI("not started", len(self),
                           self.dataclose[0], self.RSI[0])
 
+
+
         if len(self) != self.RSIState["len"]:
+            maxprice = max(self.queue20)
+            minprice = min(self.queue10)
+
 
             if self.RSIState["state"] == "not started":
-                maxprice = max(self.queue20)
+
                 if maxprice < self.dataclose[0]:
                     retval = 1
                     self.save_RSI("buy", len(self),
@@ -204,21 +209,22 @@ class TwentyTen(bt.Strategy):
             elif self.RSIState["state"] == "buy":
                 if not self.position:
                     return retval
-                minprice = min(self.queue10)
+
                 if minprice > self.dataclose[0]:
                 # if self.dataclose[0] <= self.buyprice * 0.92:
                     retval = -1
-
                     self.save_RSI("not started", len(self),
                                   self.dataclose[0], self.RSI[0])
 
-            if len(self.queue20) == self.queue20.maxlen:
-                self.queue20.popleft()
-                self.queue20.append(self.dataclose[0])
+        if len(self.queue20) == self.queue20.maxlen:
+            self.queue20.popleft()
+            self.queue20.append(self.dataclose[0])
 
-            if len(self.queue10) == self.queue10.maxlen:
-                self.queue10.popleft()
-                self.queue10.append(self.dataclose[0])
+        if len(self.queue10) == self.queue10.maxlen:
+            self.queue10.popleft()
+            self.queue10.append(self.dataclose[0])
+
+
 
 
 
