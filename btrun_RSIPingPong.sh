@@ -16,7 +16,7 @@ do
     filename=`basename ${file}`
     filename=`echo ${filename%%.*}`
     totalcash=$((totalcash+CASH))
-    finalcash=`btrun --csvformat btcsv --data "${file}" --strategy ST_RSI_Pingpong.py \
+    finalcash=`btrun --csvformat btcsv --data "${file}" --strategy ST_MA5.py \
     --timeframe days --compression 1 --cash ${CASH} --fromdate 2010-02-02 --todate 2020-07-12 --commission 0.001 --nostdstats | grep Ending | cut -d " " -f 7`
     finalcash=`echo ${finalcash}|bc`
     delta=`echo ${finalcash}-${CASH}|bc`
