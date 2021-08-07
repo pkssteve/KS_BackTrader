@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
     ma5 = talib.MA(btc['Close'], timeperiod = 10, matype = talib.MA_Type.EMA)
     macd, macd_s, macd_hist = talib.MACDEXT(btc['Close'], fastperiod=4, fastmatype=talib.MA_Type.EMA, slowperiod=12, slowmatype=talib.MA_Type.EMA, signalmatype=talib.MA_Type.EMA, signalperiod = 4)
-
+    rsi = talib.RSI(btc['Close'], timeperiod = 4)
     with os.scandir(copydir) as entries:
         for f in entries:
             filename = copydir + '/' + f.name
@@ -230,6 +230,7 @@ if __name__ == "__main__":
                                                         slowperiod=20, slowmatype=talib.MA_Type.EMA,
                                                         signalmatype=talib.MA_Type.EMA, signalperiod=10)
                 if macd2.iloc[-1] > macd_s2.iloc[-1]:
+
                     # and macd2.iloc[-1] > macd2.iloc[-2]:
                 # if btc.loc[i-1, 'ma5'] <= btc.loc[i-1, 'Close']:
                     # and btc.loc[i, 'macd'] > btc.loc[i-1, 'macd']:

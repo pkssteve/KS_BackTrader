@@ -42,14 +42,15 @@ def getTargetCandle(df, targetDT, listColumns, timeformat):
 if __name__ == "__main__":
 
     # basedir = "./datas/coin/RM_D"
-    basedir = "./datas/KOSDAQ_1D_3"
+    # basedir = "./datas/KOSDAQ_1D_3"
+    basedir = "./datas/KOSPI_1D"
     copydir = "./datas/coin/RM_D"
     listdf = []
     btc =pd.DataFrame()
     mdf=pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2010-03-05"
+    start_date = "2014-03-05"
     end_date = "2017-04-30"
 
     coinprofit = {}
@@ -63,7 +64,8 @@ if __name__ == "__main__":
             if "DS_Store" in filename:
                 continue
 
-            temp = pd.read_csv(filename, parse_dates=True, index_col=0)
+            # temp = pd.read_csv(filename, parse_dates=True, index_col=0)
+            temp = pd.read_csv(filename, parse_dates=True)
             temp[['Name']] = coinname
 
             coinprofit[coinname] = []
@@ -73,7 +75,7 @@ if __name__ == "__main__":
                 temp = temp[temp['Datetime'] >= start_date]
                 temp = temp[temp['Datetime'] <= end_date]
                 temp.index = range(0, len(temp))
-                if "KOSDAQ" in coinname:
+                if "U001" in coinname:
                     btc = temp.copy()
                 mdf = pd.concat([mdf, temp])
                 listdf.append(temp.copy())
@@ -92,7 +94,7 @@ if __name__ == "__main__":
     buycash = 0
     port_value = 0
 
-    numStock = 20
+    numStock = 10
     backwatch_days =1
     selldelay = 0 # position holding zero based value
     stepcnt = 0
@@ -120,7 +122,7 @@ if __name__ == "__main__":
     invalidCnt = 0
     for i in range(0, len(btc)):
 
-        if i > len(btc[btc['macd'].isna()]) + 50:
+        if i > len(btc[btc['macd'].isna()]) + 20:
             curdate = btc.iloc[i, 0]
             if pd.isna(btc.loc[i, 'macd']) == True:
                 continue
