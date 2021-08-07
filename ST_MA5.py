@@ -75,6 +75,11 @@ class MA5(bt.Strategy):
             self.datas[0], period=40)
         self.sma60 = bt.indicators.SimpleMovingAverage(
             self.datas[0], period=60)
+        # self.sma100 = bt.indicators.SimpleMovingAverage(
+        #     self.datas[0], period=100)
+        # self.sma200 = bt.indicators.SimpleMovingAverage(
+        #     self.datas[0], period=200)
+
         self.RSI = bt.indicators.RelativeStrengthIndex(
             self.datas[0], period=14, movav=MovingAverageSimple
         )
@@ -181,13 +186,6 @@ class MA5(bt.Strategy):
         rsiGapValue = 30
 
         if self.RSIState["state"] == "not initialized":
-            for i in range(-(self.longwindow-1), 1):
-                self.queue20.append(self.dataclose[i])
-                # self.queue20.put(self.dataclose[i])
-
-            for i in range(-(self.sellwindow-1), 1):
-                self.queue10.append(self.dataclose[i])
-
             self.save_RSI("not started", len(self),
                           self.dataclose[0], self.RSI[0])
 
@@ -195,7 +193,7 @@ class MA5(bt.Strategy):
 
             if self.RSIState["state"] == "not started":
 
-                if self.sma5[0] < self.dataclose[0]:
+                if self.sma60[0] < self.dataclose[0]:
                     retval = 1
                     self.save_RSI("buy", len(self),
                                   self.dataclose[0], self.RSI[0])
@@ -205,20 +203,11 @@ class MA5(bt.Strategy):
             elif self.RSIState["state"] == "buy":
                 if not self.position:
                     return retval
-                if self.sma5[0] > self.dataclose[0]:
+                if self.buylen + 30 < len(self):
+                # if self.sma40[0] > self.dataclose[0]:
                     retval = -1
                     self.save_RSI("not started", len(self),
                                   self.dataclose[0], self.RSI[0])
-
-            if len(self.queue20) == self.queue20.maxlen:
-                self.queue20.popleft()
-                self.queue20.append(self.dataclose[0])
-
-            if len(self.queue10) == self.queue10.maxlen:
-                self.queue10.popleft()
-                self.queue10.append(self.dataclose[0])
-
-
 
         return retval
 
