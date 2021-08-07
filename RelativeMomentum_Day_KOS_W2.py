@@ -42,7 +42,7 @@ def getTargetCandle(df, targetDT, listColumns, timeformat):
 if __name__ == "__main__":
 
     # basedir = "./datas/coin/RM_D"
-    basedir = "./datas/KOSDAQ_1D_3"
+    basedir = "./datas/KOSDAQ_1D_4"
     copydir = "./datas/coin/RM_D"
     listdf = []
     btc =pd.DataFrame()
@@ -63,7 +63,8 @@ if __name__ == "__main__":
             if "DS_Store" in filename:
                 continue
 
-            temp = pd.read_csv(filename, parse_dates=True, index_col=0)
+            # temp = pd.read_csv(filename, parse_dates=True, index_col=0)
+            temp = pd.read_csv(filename, parse_dates=True)
             temp[['Name']] = coinname
 
             coinprofit[coinname] = []
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     buycash = 0
     port_value = 0
 
-    numStock = 20
+    numStock = 10
     backwatch_days =1
     selldelay = 0 # position holding zero based value
     stepcnt = 0
@@ -120,7 +121,7 @@ if __name__ == "__main__":
     invalidCnt = 0
     for i in range(0, len(btc)):
 
-        if i > len(btc[btc['macd'].isna()]) + 50:
+        if i > len(btc[btc['macd'].isna()]) + 20:
             curdate = btc.iloc[i, 0]
             if pd.isna(btc.loc[i, 'macd']) == True:
                 continue
@@ -144,9 +145,9 @@ if __name__ == "__main__":
             curOpen.index = range(0, len(curOpen))
             curHigh = mdf[mdf['Datetime'] == curdate][['High', 'Name']].copy()
             curHigh.index = range(0, len(curHigh))
-            pastClose = getTargetCandle(mdf, pastdatetype, ['Datetime', 'Close', 'Name'], "%Y-%m-%d")
+            pastClose = getTargetCandle(mdf, pastdatetype, ['Datetime', 'Close', 'High', 'Low', 'Open','Name'], "%Y-%m-%d")
             pastClose.index = range(0, len(pastClose))
-            preClose = getTargetCandle(mdf, predatedt, ['Datetime', 'Close','Name'], "%Y-%m-%d")
+            preClose = getTargetCandle(mdf, predatedt, ['Datetime', 'Close', 'High', 'Low', 'Name'], "%Y-%m-%d")
             preClose.index = range(0, len(preClose))
 
 
@@ -154,8 +155,8 @@ if __name__ == "__main__":
             ## merge for diff rate caculation and descending sort by diff rate
             mclose = pd.merge(curClose, pastClose, how='left', on='Name')
             mclose2 = pd.merge(curOpen, pastClose, how='left', on='Name')
-            mclose[['Diff']] = (mclose['Close_x']-mclose['Close_y']) / mclose['Close_y']
-            mclose2[['Diff']] = (mclose2['Open']-mclose2['Close']) / mclose2['Close']
+            mclose[['Diff']] = (pastClose['Close']-pastClose['Open']) / pastClose['Open']
+            mclose2[['Diff']] = (mclose2['Open_x']-mclose2['Close']) / mclose2['Close']
             mclose_p = mclose.sort_values(by=['Diff'], axis=0, ascending=False).copy()
             mclose_m = mclose.sort_values(by=['Diff'], axis=0, ascending=True).copy()
 
@@ -241,18 +242,21 @@ if __name__ == "__main__":
                     # and btc.loc[i, 'macd'] > btc.loc[i - 1, 'macd']:
                     longlist = {}
                     shortlist = {}
-                    for j in range(6, 26):
+                    for j in range(0, 20):
                         stockname = mclose_p.iloc[j]['Name']
                         curopen = curOpen[curOpen['Name'] == stockname].iloc[0, 0]
                         curhigh = curHigh[curHigh['Name'] == stockname].iloc[0, 0]
                         curclose = curClose[curClose['Name'] == stockname].iloc[0, 0]
+                        prehigh = pastClose[pastClose['Name'] == stockname].iloc[0]['High']
+                        prelow = pastClose[pastClose['Name'] == stockname].iloc[0]['Low']
+                        pregap = prehigh - prelow
 
                         if curhigh == curopen:
                             continue
-                        ibs = (curclose-curopen)/(curhigh-curopen)
-
+                        # ibs = (curclose-curopen)/(curhigh-curopen)
                         # if ibs <= 0.3:
-                        longlist[stockname] = curclose
+                        if curopen + pregap < curhigh:
+                            longlist[stockname] = curopen + pregap
 
                         if len(longlist) == numStock:
                             break

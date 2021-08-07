@@ -37,7 +37,7 @@ if __name__ == "__main__":
     mdf=pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2010-03-05"
+    start_date = "2006-03-05"
     end_date = "2020-03-30"
 
     coinprofit = {}

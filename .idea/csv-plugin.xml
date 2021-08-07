@@ -52,6 +52,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/RelativeMomentum_Day_KOS_W2.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/RelativeMomentum_Day_KOS_William.py">
           <value>
             <Attribute>
@@ -60,6 +67,13 @@
           </value>
         </entry>
         <entry key="/RelativeMomentum_Hour.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/ST_Williams_R.py">
           <value>
             <Attribute>
               <option name="separator" value="," />

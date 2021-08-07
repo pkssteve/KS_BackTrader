@@ -31,7 +31,7 @@ class WillR(bt.Strategy):
         self.cursize = 0
 
         self.commission = 0.001
-        self.leverage = 3
+        self.leverage = 1
         self.interest = 0.001
         self.startcash = 100000
         self.curcash = 100000
@@ -210,7 +210,7 @@ class WillR(bt.Strategy):
             lenDiff = (len(self) - self.RSIState["len"])
 
             if self.RSIState["state"] == "not started":
-                if self.willR2[0] > self.willR2[-1] and (self.willR2[0] >= -100 and self.willR2[-1] < -100):
+                if self.willR[0] > self.willR[-1] and (self.willR[0] >= -100 and self.willR[-1] < -95):
 
                     retval = 1
                     self.save_RSI("buy", len(self),
@@ -222,12 +222,12 @@ class WillR(bt.Strategy):
                 if not self.position:
                     return retval
 
-                if self.willR2[0] < self.willR2[-1] and (self.willR2[0] <= -95):
+                if self.willR[0] < self.willR[-1] and (self.willR[0] <= -90):
                     retval = -1
                     self.save_RSI("not started", len(self),
                                   self.dataclose[0], self.RSI[0])
 
-                elif self.willR2[0] < self.willR2[-1] and (self.willR2[0] <= -10 and self.willR2[-1] > -10):
+                elif self.willR[0] < self.willR[-1] and (self.willR[0] <= -10 and self.willR[-1] > -10):
                     retval = -1
                     self.save_RSI("not started", len(self),
                                   self.dataclose[0], self.RSI[0])

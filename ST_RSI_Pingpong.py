@@ -31,7 +31,7 @@ class RSIPP(bt.Strategy):
         self.cursize = 0
 
         self.commission = 0.001
-        self.leverage = 3
+        self.leverage = 1
         self.interest = 0.001
         self.startcash = 100000
         self.curcash = 100000
@@ -77,8 +77,12 @@ class RSIPP(bt.Strategy):
             self.dataclose, period=40)
         self.sma60 = bt.indicators.SimpleMovingAverage(
             self.dataclose, period=60)
+        self.sma100 = bt.indicators.SimpleMovingAverage(
+            self.dataclose, period=100)
+        self.sma200 = bt.indicators.SimpleMovingAverage(
+            self.dataclose, period=200)
         self.RSI = bt.indicators.RelativeStrengthIndex(
-            self.dataclose, period=14, movav=MovingAverageSimple
+            self.dataclose, period=4, movav=MovingAverageSimple
         )
         self.macd = bt.indicators.MACD(
             self.dataclose, plot=True, movav=ExponentialMovingAverage)
@@ -127,8 +131,8 @@ class RSIPP(bt.Strategy):
                 self.buylen = len(self)
             else:  # Sell
                 self.log(
-                    "SELL EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f"
-                    % (order.executed.price, order.executed.value, order.executed.comm)
+                    "SELL EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f, Open %.2f, Close %.2f"
+                    % (order.executed.price, order.executed.value, order.executed.comm, self.datas[0].open[0], self.datas[0].close[0])
                 )
                 curValue = abs(order.executed.price * order.executed.size)
                 profitRate = (curValue - self.positionValue) / \
@@ -201,8 +205,8 @@ class RSIPP(bt.Strategy):
 
             if self.RSIState["state"] == "not started" :
 
-                if self.RSI[0] > self.RSI[-1] and (self.RSI[0] > 30 and self.RSI[0] < 60):
-
+                # if self.RSI[0] > self.RSI[-1] and (self.RSI[0] >= 25 and self.RSI[-1] < 25):
+                if (self.sma100[0] < self.dataclose[0] and self.RSI[0] < 25 and self.RSI[-1] > 25):
                     retval = 1
                     self.save_RSI("buy", len(self),
                                   self.dataclose[0], self.RSI[0])
@@ -212,18 +216,22 @@ class RSIPP(bt.Strategy):
                 if not self.position:
                     return retval
 
-                if self.buyprice * 0.99 > self.dataclose[0]:
+                # if self.buyprice * 0.93 > self.dataclose[0]:
+                #     retval = -1
+                #     self.save_RSI("not started", len(self),
+                #                   self.dataclose[0], self.RSI[0])
+
+                # elif self.RSI[0] < self.RSI[-1] and self.RSI[0] < 55 and self.RSI[-1] > 55:
+                elif self.RSI[0] > 55:
                     retval = -1
                     self.save_RSI("not started", len(self),
                                   self.dataclose[0], self.RSI[0])
-                elif self.RSI[0] < self.RSI[-1] and self.RSI[0] < 30:
-                    retval = -1
-                    self.save_RSI("not started", len(self),
-                                  self.dataclose[0], self.RSI[0])
-                elif self.buyprice * 1.3 < self.dataclose[0]:
-                    retval = -1
-                    self.save_RSI("not started", len(self),
-                                  self.dataclose[0], self.RSI[0])
+
+
+                # elif self.buyprice * 1.3 < self.dataclose[0]:
+                #     retval = -1
+                #     self.save_RSI("not started", len(self),
+                #                   self.dataclose[0], self.RSI[0])
 
             if len(self.queue20) == self.queue20.maxlen:
                 self.queue20.popleft()

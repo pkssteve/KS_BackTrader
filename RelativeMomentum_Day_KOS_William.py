@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     # basedir = "./datas/coin/RM_D"
     basedir = "./datas/KOSDAQ_1H_2"
-    basedir2 = "./datas/KOSDAQ_1D_3"
+    basedir2 = "./datas/KOSDAQ_1D_4"
     copydir = "./datas/KOSDAQ_1H"
     listdf = []
     btc = pd.DataFrame()
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     mdf2 = pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2019-03-05"
+    start_date = "2018-03-05"
     end_date = "2020-04-10"
 
     coinprofit = {}
@@ -148,12 +148,12 @@ if __name__ == "__main__":
     position_day = 0
     longlist = {}
 
-    numStock = 5
+    numStock = 20
     unitbuy = 10000
     buycash = 0
     port_value = 0
 
-    backwatch_days = 14
+    backwatch_days = 1
     selldelay = 1 # position holding zero based value
     stepcnt = 0
 
@@ -335,7 +335,7 @@ if __name__ == "__main__":
                 final_value = (final_value + port_value) - ((port_value * leverage) * commision)
                 final_value = final_value - ((buycash*(leverage-1)) * interest)
                 max_cash = max(final_value, max_cash)
-                mdd = min(mdd, ((final_value - max_cash)/max_cash)*100)
+                mdd = min(mdd, ((final_value - max_cash)/max_cash) * 100)
 
                 unitbuy = int (final_value // numStock)
 

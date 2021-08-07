@@ -49,8 +49,8 @@ if __name__ == "__main__":
     # cerebro.addstrategy(tt.TwentyTen, printLog=True)
     # cerebro.addstrategy(ma.MA5, printLog=True)
     # cerebro.addstrategy(vol.VOLA, printLog=True)
-    # cerebro.addstrategy(rp.RSIPP, printLog=True)
-    cerebro.addstrategy(wr.WillR, printLog=True)
+    cerebro.addstrategy(rp.RSIPP, printLog=True)
+    # cerebro.addstrategy(wr.WillR, printLog=True)
     # cerebro.addstrategy(wr2.WillR2, printLog=True)
     #
     # strats = cerebro.optstrategy(
