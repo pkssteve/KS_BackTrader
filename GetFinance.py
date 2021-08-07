@@ -1,5 +1,10 @@
 import pandas as pd
 import OpenDartReader
+import sqlite3
+
+con = sqlite3.connect('finance.db')
+cur = con.cursor()
+cur.execute('CREATE TABLE stocks')
 
 # ==== 0. 객체 생성 ====
 # 객체 생성 (API KEY 지정)

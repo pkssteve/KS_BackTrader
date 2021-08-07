@@ -70,8 +70,8 @@ if __name__ == "__main__":
 
     # df2 = pd.read_csv("./datas/coin/BTCUSDT.csv",
     #                   parse_dates=True, index_col=0)
-    # filename = "./datas/coin/RM_D/BTCUSDT_D.csv"
-    filename = "./datas/STOCK/AAPL.csv"
+    filename = "./datas/coin/RM_D/BTCUSDT_D.csv"
+    # filename = "./datas/STOCK/AAPL.csv"
     # df2 = pd.read_csv(filename, parse_dates=True, index_col=1)
     df2 = pd.read_csv(filename, parse_dates=True, index_col=0)
     # df2 = df2["2018-03-01":]

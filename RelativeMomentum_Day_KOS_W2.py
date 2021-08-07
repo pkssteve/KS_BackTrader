@@ -42,14 +42,14 @@ def getTargetCandle(df, targetDT, listColumns, timeformat):
 if __name__ == "__main__":
 
     # basedir = "./datas/coin/RM_D"
-    basedir = "./datas/KOSDAQ_1D_4"
+    basedir = "./datas/KOREA"
     copydir = "./datas/coin/RM_D"
     listdf = []
     btc =pd.DataFrame()
     mdf=pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2010-03-05"
+    start_date = "2014-03-05"
     end_date = "2017-04-30"
 
     coinprofit = {}
@@ -74,7 +74,7 @@ if __name__ == "__main__":
                 temp = temp[temp['Datetime'] >= start_date]
                 temp = temp[temp['Datetime'] <= end_date]
                 temp.index = range(0, len(temp))
-                if "KOSDAQ" in coinname:
+                if "U001" in coinname:
                     btc = temp.copy()
                 mdf = pd.concat([mdf, temp])
                 listdf.append(temp.copy())
@@ -242,7 +242,7 @@ if __name__ == "__main__":
                     # and btc.loc[i, 'macd'] > btc.loc[i - 1, 'macd']:
                     longlist = {}
                     shortlist = {}
-                    for j in range(0, 20):
+                    for j in range(5, 25):
                         stockname = mclose_p.iloc[j]['Name']
                         curopen = curOpen[curOpen['Name'] == stockname].iloc[0, 0]
                         curhigh = curHigh[curHigh['Name'] == stockname].iloc[0, 0]

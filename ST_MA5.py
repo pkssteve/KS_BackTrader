@@ -237,23 +237,6 @@ class MA5(bt.Strategy):
                     self.log("SELL CREATE, %.2f" % self.dataclose[0])
                     self.order = self.sell(size=int(self.cursize))
 
-                # if self.dataclose[0] <= self.buyprice * 0.97:
-                #     # SELL, SELL, SELL!!! (with all possible default parameters)
-                #     self.log("SELL CREATE, %.2f" % self.dataclose[0])
-
-                #     # Keep track of the created order to avoid a 2nd order
-                #     self.order = self.sell()
-
-                # # self.macd.lines.macd[0] < self.macd.lines.signal[0]:
-                # # self.RSI[0] >= 70:
-
-                # # (self.dataclose[0] >= self.buyprice * 1.07) or
-                # elif self.RSI[0] >= 70:
-                #     # SELL, SELL, SELL!!! (with all possible default parameters)
-                #     self.log("SELL CREATE, %.2f" % self.dataclose[0])
-
-                #     # Keep track of the created order to avoid a 2nd order
-                #     self.order = self.sell()
 
     def stop(self):
 

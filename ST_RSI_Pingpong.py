@@ -24,8 +24,6 @@ class RSIPP(bt.Strategy):
     def __init__(self):
         # Keep a reference to the "close" line in the data[0] dataseries
         self.dataclose = self.datas[0].close
-        self.datahigh = self.datas[0].high(-1)
-        self.datalow = self.datas[0].low(-1)
         self.volume = self.datas[0].volume
 
         self.cursize = 0
@@ -79,15 +77,12 @@ class RSIPP(bt.Strategy):
             self.dataclose, period=60)
         self.sma100 = bt.indicators.SimpleMovingAverage(
             self.dataclose, period=100)
-        self.sma200 = bt.indicators.SimpleMovingAverage(
-            self.dataclose, period=200)
         self.RSI = bt.indicators.RelativeStrengthIndex(
-            self.dataclose, period=4, movav=MovingAverageSimple
+            self.dataclose, period=5, movav=ExponentialMovingAverage
         )
         self.macd = bt.indicators.MACD(
             self.dataclose, plot=True, movav=ExponentialMovingAverage)
 
-        self.pregap = self.datahigh - self.datalow
 
         # Momentum Indicators
         # bt.indicators.StochasticSlow(self.datas[0])
@@ -206,23 +201,31 @@ class RSIPP(bt.Strategy):
             if self.RSIState["state"] == "not started" :
 
                 # if self.RSI[0] > self.RSI[-1] and (self.RSI[0] >= 25 and self.RSI[-1] < 25):
-                if (self.sma100[0] < self.dataclose[0] and self.RSI[0] < 25 and self.RSI[-1] > 25):
+                if (self.sma40[0] < self.dataclose[0] and
+                        self.RSI[0] < 25 and self.RSI[-1] >= 25):
+
+                    self.save_RSI("wait", len(self),
+                                  self.dataclose[0], self.RSI[0])
+                    self.buydate = self.datas[0].datetime.datetime(0)
+
+            elif self.RSIState["state"] == "wait":
+
+                # elif self.RSI[0] < self.RSI[-1] and self.RSI[0] < 55 and self.RSI[-1] > 55:
+                if self.RSI[0] > 25:
                     retval = 1
                     self.save_RSI("buy", len(self),
                                   self.dataclose[0], self.RSI[0])
-                    self.buydate = self.datas[0].datetime.datetime(0)
 
             elif self.RSIState["state"] == "buy":
                 if not self.position:
                     return retval
 
-                # if self.buyprice * 0.93 > self.dataclose[0]:
-                #     retval = -1
-                #     self.save_RSI("not started", len(self),
-                #                   self.dataclose[0], self.RSI[0])
+                if self.buyprice * 0.97 > self.dataclose[0]:
+                    retval = -1
+                    self.save_RSI("not started", len(self),
+                                  self.dataclose[0], self.RSI[0])
 
-                # elif self.RSI[0] < self.RSI[-1] and self.RSI[0] < 55 and self.RSI[-1] > 55:
-                elif self.RSI[0] > 55:
+                elif self.RSI[-1] > 50 and self.RSI[0] <= 50:
                     retval = -1
                     self.save_RSI("not started", len(self),
                                   self.dataclose[0], self.RSI[0])
