@@ -375,7 +375,7 @@ for code in codes:
 
     if "스팩" in fdf[fdf['Symbol'] == code]['Name'].iloc[0]:
         continue
-    if count < 506:
+    if count < 502:
     # if count < 100:
         continue
 
@@ -400,7 +400,7 @@ for code in codes:
 
     # for total list of documents for the company
     for i in range(len(df)):
-        time.sleep(0.5)
+        time.sleep(0.7)
         rcept_no = df.iloc[i]['rcept_no']
         rcept_dt = df.iloc[i]['rcept_dt']
         report_nm = df.iloc[i]['report_nm']
@@ -427,7 +427,7 @@ for code in codes:
             doclist = dart.sub_docs(rcept_no)
         except Exception as e:
             print(e)
-        ldoc = doclist[doclist['title'].str.contains(r' 재무제표$')]
+        ldoc = doclist[doclist['title'].str.contains(r'재무제표$')]
         if len(ldoc) == 0:
             continue
         url  =ldoc.iloc[0][1]
