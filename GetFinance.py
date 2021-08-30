@@ -46,30 +46,46 @@ def getColSpan(_head_rows): # get colspan of first column if column rows are 2
 
 
 def getFinanceValues(soup, typenum, tags_col2, tags2, dic, tags2_second, tags_third = None):
+    df = pd.DataFrame()
+
     head_rows = soup.select("body > table:nth-child(%d) > thead > tr" % (tableIndex))
     headers = getTableHeaders(head_rows)
+
     print('Table Headers')
     for li in headers:
         print(li)
-    colspan = getColSpan(head_rows)
+
+    k = 0
+    colspan = 1
+    if len(head_rows) == 0:
+        while "colspan" in tags2[k].attrs:
+            colspan = int(tags2[k].attrs['colspan'])
+            k += 1
+    else:
+        colspan = getColSpan(head_rows)
     print('col span %d' % colspan)
 
     if len(headers) > 0:
         row = headers[0]
-        row_with_digit = re.findall(r'\d+', row[1])
-        if len(row_with_digit) > 0:
-            first = int(row_with_digit[0])
-        else:
-            printError('There is no digit in a row============================================')
-            return
-        if len(row) > 2:
-            second = re.findall(r'\d+', row[2])
-            if len(second) > 0:
-                second = int(second[0])
+        if len(row) < 2 and len(headers) > 1:
+            row = headers[1]
+        if len(row) > 1:
+            row_with_digit = re.findall(r'\d+', row[1])
+            if len(row_with_digit) > 0:
+                first = int(row_with_digit[0])
             else:
-                second = 0
-            if first < second:
-                printError("===========================================  the quarter order was reversed !! first %d second %d" % (first, second))
+                printError('There is no digit in a row============================================')
+                return df
+            if len(row) > 2:
+                second = re.findall(r'\d+', row[2])
+                if len(second) > 0:
+                    second = int(second[0])
+                else:
+                    second = 0
+                if first < second:
+                    printError("===========================================  the quarter order was reversed !! first %d second %d" % (first, second))
+        else:
+            printError("It couldn't check quarter ordering")
     else:
         printError("===============================================  there is no header !!")
         if len(tags_col2) > 1:
@@ -77,8 +93,6 @@ def getFinanceValues(soup, typenum, tags_col2, tags2, dic, tags2_second, tags_th
                 if type(tags_col2[1]) != NavigableString:
                     if 'colspan' in tags_col2[1].attrs:
                         colspan = int(tags_col2[1].attrs['colspan'])
-
-
 
 
 
@@ -161,6 +175,11 @@ def getFinanceValues(soup, typenum, tags_col2, tags2, dic, tags2_second, tags_th
             printError('Wrong!! Gross Profit of %s was wrong. gross profit %d cost2 %d operating income %d diff %d ' % (
             code, grossProfit, costs2, operIncome, grossProfit - (costs2 + operIncome)))
 
+    df = pd.DataFrame([[sales, grossProfit, operIncome, netIncome]])
+    df.columns = ['Sales', 'GrossProfit', 'OperIncome', 'NetIncome']
+
+    return df
+
 def getTableHeaders(_head_rows):
     headers = []
     for i in range(len(_head_rows)):
@@ -191,15 +210,16 @@ def findWordIndex(lines, findWord):
 
     return -1
 
-def getValues(colnames, values, word, idx = -1, colspan = 1):
+def getValues(colnames, values, word, idx = -1, colspan = 1, dt = 1):
     amount = -1
-    datatype = 1
+    datatype = dt
     if len(colnames) <3:
         toks_col2 = str(colnames).split('<br/>')
         if len(toks_col2) < 34:
             toks_col2 = str(toks_col2).split('</td>')
         colnames = toks_col2
 
+    values_back = values
 
     if idx == -1:
         index = findWordIndex(colnames, word)
@@ -244,8 +264,8 @@ def getValues(colnames, values, word, idx = -1, colspan = 1):
     tags = re.findall(r'△*Δ*\(*-*\)*[\d+,*]+\)*', foundstr)
     if len(tags) == 0:
         if '판매비' in word and colspan == 1:
-            c1 = getValues(colnames, values, "판매비", index + 1)
-            c2 = getValues(colnames, values, "관리비", index + 2)
+            c1 = getValues(colnames, values_back, "판매비", index + 1, colspan)
+            c2 = getValues(colnames, values_back, "관리비", index + 2, colspan)
             amount = c1 + c2
             amount = amount if amount > 0 else -amount
         return amount
@@ -259,6 +279,7 @@ def getValues(colnames, values, word, idx = -1, colspan = 1):
     foundstr = foundstr.replace('(-)', '-')
     foundstr = foundstr.replace('△', '-')
     foundstr = foundstr.replace('Δ', '-')
+    foundstr = foundstr.replace('\xa0', '')
     if '(' in foundstr:
         foundstr = foundstr.strip('()')
         foundstr = foundstr.replace(",", "")
@@ -276,7 +297,10 @@ def getValues(colnames, values, word, idx = -1, colspan = 1):
     else:
         foundstr_temp = foundstr.replace(",", "")
         foundstr = foundstr_temp.replace(" ", "")
-        amount = int(foundstr.replace(",", ""))
+        if foundstr.replace('-', '').isnumeric():
+            amount = int(foundstr.replace(",", ""))
+        else:
+            printError('It is not numeric  ====================================================')
         if '손실' in word:
             amount = -amount if amount > 0 else amount
 
@@ -328,6 +352,8 @@ fdf.index = range(len(fdf))
 count = 0
 codes = fdf['Symbol'].to_list()
 
+
+total_df = pd.DataFrame()
 start = 0
 for code in codes:
     # if code == '060310':
@@ -335,6 +361,7 @@ for code in codes:
     isnan = fdf[fdf['Symbol'] == code]['Sector'].isna().iloc[0]
     if len(code) != 6 or isnan == True:
         continue
+
     df = pd.DataFrame()
 
     if code != '265520' and start == 0:
@@ -342,9 +369,18 @@ for code in codes:
     else:
         start = 1
 
+    count += 1
+
+    print('\n\nthe %d th code' % count)
+
+    if "스팩" in fdf[fdf['Symbol'] == code]['Name'].iloc[0]:
+        continue
+    if count < 506:
+    # if count < 100:
+        continue
+
     try:
         print('try code %s' % code)
-        time.sleep(0.2)
         df = dart.list(code, start='2000-01-01', end='2021-06-30', kind='A')
     except Exception as e:
         stockname = fdf[fdf['Symbol']==code]['Name'].iloc[0]
@@ -352,21 +388,15 @@ for code in codes:
         print(e)
         continue
 
-
     if start == 0:
         continue
 
-    count += 1
-
-    print('the %d th code' % count)
-    if count < 30:
+    if len(df) == 0:
+        printError("There is no doc list =====================================================")
         continue
-
     df = df.sort_values(by=['rcept_no'], axis=0, ascending=True)
     df.index = range(len(df))
 
-    if len(df) == 0:
-        pass
 
     # for total list of documents for the company
     for i in range(len(df)):
@@ -385,7 +415,10 @@ for code in codes:
         date = re.findall(r'(\d+.\d+)',report_nm)[0]
         report_year = int(date[:4])
         report_month = int(date[5:])
-        report_quarter = strToQuater['%s%s' % (report_str, report_month)]
+        if '%s%s' % (report_str, report_month) in strToQuater:
+            report_quarter = strToQuater['%s%s' % (report_str, report_month)]
+        else:
+            printError('============================ Invalid Quarter ===================================')
 
         typenum = 1
         dic = fdic
@@ -398,7 +431,6 @@ for code in codes:
         if len(ldoc) == 0:
             continue
         url  =ldoc.iloc[0][1]
-        'http://dart.fss.or.kr/report/viewer.do?rcpNo=20000330000607&dcmNo=39127&eleId=2219&offset=251162&length=33179&dtd=dart2.dtd' # 영업이익이 다음 테이블에 존재함.
 
         print(report_nm, rcept_no, url)
 
@@ -449,10 +481,20 @@ for code in codes:
             dfs = pd.read_html(url, header=1)
             parse_type = 2
 
+        df_finance = pd.DataFrame()
         if parse_type == 1:
-            getFinanceValues(soup, typenum, tags_col2, tags2, dic, tags2_second, tags_op)
+            df_finance = getFinanceValues(soup, typenum, tags_col2, tags2, dic, tags2_second, tags_op)
         elif parse_type == 2:
             print("Preparing...")
+
+        df_cur = pd.DataFrame([df.iloc[i].copy()])
+        if len(df_finance) == 0:
+            continue
+        df_cur[['Sales', 'GrossProfit', 'OperIncome', 'NetIncome']] = [df_finance.iloc[0].copy()]
+        df_cur[['URL']] = url
+
+        total_df = total_df.append(df_cur.copy())
+
 
 
         pass
