@@ -43,15 +43,15 @@ if __name__ == "__main__":
 
     # basedir = "./datas/coin/RM_D"
     # basedir = "./datas/KOSDAQ_1D_3"
-    basedir = "./datas/KOSPI_1D"
+    basedir = "./datas/KOREA"
     copydir = "./datas/coin/RM_D"
     listdf = []
     btc =pd.DataFrame()
     mdf=pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2014-03-05"
-    end_date = "2017-04-30"
+    start_date = "2015-03-05"
+    end_date = "2021-03-30"
 
     coinprofit = {}
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
                 temp = temp[temp['Datetime'] >= start_date]
                 temp = temp[temp['Datetime'] <= end_date]
                 temp.index = range(0, len(temp))
-                if "U001" in coinname:
+                if "U001" or "U201" in coinname:
                     btc = temp.copy()
                 mdf = pd.concat([mdf, temp])
                 listdf.append(temp.copy())
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     buycash = 0
     port_value = 0
 
-    numStock = 10
+    numStock = 5
     backwatch_days =1
     selldelay = 0 # position holding zero based value
     stepcnt = 0
@@ -120,6 +120,7 @@ if __name__ == "__main__":
 
     vdf = pd.DataFrame()
     invalidCnt = 0
+    trade_hist = pd.DataFrame(columns = ['Date', 'Stock', 'Buy', 'Sell'])
     for i in range(0, len(btc)):
 
         if i > len(btc[btc['macd'].isna()]) + 20:
@@ -175,6 +176,7 @@ if __name__ == "__main__":
                 buycash = 0
                 port_value = 0
 
+                buyprices = []
                 sellprices = []
                 longlist = sorted(longlist.items())
                 longlist = dict(longlist)
@@ -186,8 +188,9 @@ if __name__ == "__main__":
                         result_value = unitbuy + (unitbuy * (profit * leverage))
                         result_value = max(result_value, 0)
                         port_value += result_value
-
+                        buyprices.append(val)
                         sellprices.append(cur_price)
+                        trade_hist = trade_hist.append([[curdate, key, val, cur_price]])
                     else:
                         invalidCnt += 1
                         result_value = unitbuy
@@ -197,7 +200,7 @@ if __name__ == "__main__":
                 if len(longlist):
                     trades_str = str(longlist)
                     history = history.append(
-                        {"Date": curdate, "Trades": trades_str, "SellPrices": str(sellprices)}, ignore_index=True)
+                        {"Date": curdate, "Trades": trades_str, "BuyPrices":str(buyprices), "SellPrices": str(sellprices)}, ignore_index=True)
 
 
                 if doShortTrade==1:
@@ -239,11 +242,11 @@ if __name__ == "__main__":
 
             # buy
             if position == 0:
-                if True or btc.loc[i, 'macd'] > btc.loc[i, 'macd_s']:
+                if True or btc.loc[i-1, 'macd'] > btc.loc[i-1, 'macd_s']:
                     # and btc.loc[i, 'macd'] > btc.loc[i - 1, 'macd']:
                     longlist = {}
                     shortlist = {}
-                    for j in range(6, 26):
+                    for j in range(5, 26):
                         stockname = mclose_p.iloc[j]['Name']
                         curopen = curOpen[curOpen['Name'] == stockname].iloc[0, 0]
                         curhigh = curHigh[curHigh['Name'] == stockname].iloc[0, 0]

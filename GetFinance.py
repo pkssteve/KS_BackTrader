@@ -14,8 +14,33 @@ css_parser = cssutils.CSSParser()
 tablenum1 = [7,14]
 tablenum2 = [6,11]
 
+def findCurrencyUnit(ntags):
+    res = ''
+    existUnit = False
+    for t in ntags:
+        if type(t) != NavigableString:
+            if "단위" in t.text:
+                cur_text = t.text
+                existUnit = True
+                toks = cur_text.split(":")
+                if len(toks) > 0:
+                    selected_text = toks[len(toks)-1]
+                    selected_text = selected_text.replace(' ', '')
+                    selected_text = selected_text.replace('\xa0', '')
+                    selected_text = selected_text.replace('\n', '')
+                    selected_text = selected_text.replace('\\u', '')
+                    selected_text = selected_text.replace(')', '')
+                    res = selected_text
+                    break
+
+    return res, existUnit
+
 def printError(sentence):
     print('\033[91m%s' % sentence)
+    global gdf_ErrorReport
+    global gCurDF
+    gCurDF[['err_str']] = sentence
+    gdf_ErrorReport = gdf_ErrorReport.append(gCurDF.copy())
 
 def getColSpan(_head_rows): # get colspan of first column if column rows are 2
 
@@ -277,6 +302,7 @@ def getValues(colnames, values, word, idx = -1, colspan = 1, dt = 1):
 
     foundstr = foundstr.replace('\n', "")
     foundstr = foundstr.replace('(-)', '-')
+    foundstr = foundstr.replace('--', '-')
     foundstr = foundstr.replace('△', '-')
     foundstr = foundstr.replace('Δ', '-')
     foundstr = foundstr.replace('\xa0', '')
@@ -339,6 +365,8 @@ fdic = {"매출":"매출", "매출원가":"매출원가", "매출총이익":"매
                 "영업이익":"영업이익", "영업이익2":"영업손실", "당기순이익":"당기순이익", "당기순이익2":"당기순손실"}
 fdic2 = {"매출":"영업수익", "매출원가":"영업비용", "매출총이익":"매출총이익", "매출총이익2":"매출총손실", "판매비":"판매비", \
         "영업이익":"영업이익", "영업이익2":"영업손실", "당기순이익":"당기순이익", "당기순이익2":"당기순손실"}
+unit_dic = {"원":1,"십원":10, "백원":100, "천원":1000, "만원":10000, "십만원":100000, "백만원":1000000, "천만원":10000000,
+            "억원":100000000, "억":100000000, "십억원":1000000000, "십억":1000000000, "백억":10000000000, "백억원":10000000000, "천억원":100000000000, "천억":100000000000}
         #매출총이익=매출-매출원가 계산값 사용해야함
         #검증식은 매출총이익-판관비 하면 영업이익이 나와야함
 # data를 종목별로 다 가져와서 df에 넣은 후 to_sql()을 사용한다.
@@ -355,6 +383,9 @@ codes = fdf['Symbol'].to_list()
 
 total_df = pd.DataFrame()
 start = 0
+gCurDF = pd.DataFrame()
+gdf_ErrorReport = pd.DataFrame()
+# codes= ['010820', '028670', '054300', '225590', '170790', '037030', '037070', '005690', '208340', '046210', '081150', '104480', '246710', '057680', '322180']
 for code in codes:
     # if code == '060310':
     #     continue
@@ -364,10 +395,10 @@ for code in codes:
 
     df = pd.DataFrame()
 
-    if code != '265520' and start == 0:
-        continue
-    else:
-        start = 1
+    # if code != '265520' and start == 0:
+    #     continue
+    # else:
+    start = 1
 
     count += 1
 
@@ -375,8 +406,9 @@ for code in codes:
 
     if "스팩" in fdf[fdf['Symbol'] == code]['Name'].iloc[0]:
         continue
-    if count < 502:
-    # if count < 100:
+    # if count < 1950:
+    initial_count = 1308
+    if count < initial_count:
         continue
 
     try:
@@ -398,7 +430,7 @@ for code in codes:
     df.index = range(len(df))
 
 
-    # for total list of documents for the company
+    # for total list of documents for a company
     for i in range(len(df)):
         time.sleep(0.7)
         rcept_no = df.iloc[i]['rcept_no']
@@ -407,6 +439,10 @@ for code in codes:
         if "보고서" not in report_nm:
             continue
         report_str = re.findall('\w\w보고서',report_nm.replace(" ", ""))[0]
+
+        df_cur = pd.DataFrame([df.iloc[i].copy()])
+        gCurDF = df_cur.copy()
+        gCurDF[['url']] = ''
 
         report_date_tag = re.findall(r'(\d+.\d+)', report_nm)
         if len(report_date_tag) ==0 :
@@ -427,14 +463,22 @@ for code in codes:
             doclist = dart.sub_docs(rcept_no)
         except Exception as e:
             print(e)
-        ldoc = doclist[doclist['title'].str.contains(r'재무제표$')]
+        ldoc = doclist[doclist['title'].str.contains(r'\.재무제표$')]
         if len(ldoc) == 0:
             continue
         url  =ldoc.iloc[0][1]
 
+        gCurDF[['url']] = url
         print(report_nm, rcept_no, url)
 
-        html = requests.get(url).text
+
+        try:
+            html = requests.get(url).text
+        except Exception as ex:
+            print(ex)
+            time.sleep(60*10)
+            html = requests.get(url).text
+
         # html = html.replace(' ', '')
         soup = BeautifulSoup(html, "html5lib")
         # tags = soup.select("#_per")
@@ -467,6 +511,20 @@ for code in codes:
             print("there is no table to find. So skipped this report")
             continue
 
+        currency_unit = 1
+        for j in range(1,4):
+            tags_tableHeader = soup.select("body > table:nth-child(%d) > tbody > tr > td" % (tableIndex - j))
+            currency_unit_str, existUnit = findCurrencyUnit(tags_tableHeader)
+            if currency_unit_str != '' and currency_unit_str in unit_dic:
+                if j==3:
+                    printError('===============================================Warning : unit table index -3')
+                break
+
+        if currency_unit_str != '' and currency_unit_str in unit_dic:
+            currency_unit = unit_dic[currency_unit_str]
+            print("Current Unit : %d" % currency_unit)
+        elif existUnit == False:
+            printError(f'===========================================there is no current unit in the table. currency_unit_str: {currency_unit_str}')
 
         tags_col2 = soup.select("body > table:nth-child(%d) > tbody > tr > td:nth-child(1)" % (tableIndex))
         tags2 = soup.select("body > table:nth-child(%d) > tbody > tr > td:nth-child(2)" % (tableIndex))
@@ -487,24 +545,31 @@ for code in codes:
         elif parse_type == 2:
             print("Preparing...")
 
-        df_cur = pd.DataFrame([df.iloc[i].copy()])
+
+
         if len(df_finance) == 0:
             continue
+
         df_cur[['Sales', 'GrossProfit', 'OperIncome', 'NetIncome']] = [df_finance.iloc[0].copy()]
         df_cur[['URL']] = url
+        df_cur[['CurrencyUnit']] = currency_unit
 
         total_df = total_df.append(df_cur.copy())
+        total_df.index = range(len(total_df))
 
-
-
+        if count ==30000:
+            total_df = total_df[total_df['stock_code']!= code].copy()
+            total_df.to_csv(f'datas/finance/fdata_by_count_{initial_count}_{count-1}.csv', index=0)
+            gdf_ErrorReport = gdf_ErrorReport[gdf_ErrorReport['stock_code']!=code].copy()
+            gdf_ErrorReport.to_csv(f'datas/finance/fdata_error_by_count_{initial_count}_{count-1}.csv', index=0)
         pass
 
         # 제무제표 가져온다
         # 손익계산서 가져온다
         # data를 df에 넣는다.
-    if count >= 2000:
-        print("break!!!")
-        break
+    # if count >= 2000:
+    #     print("break!!!")
+    #     break
     pass
 
 # ==== 0. 객체 생성 ====

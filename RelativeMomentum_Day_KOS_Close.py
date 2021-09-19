@@ -79,7 +79,7 @@ if __name__ == "__main__":
     buycash = 0
     port_value = 0
 
-    numStock = 100
+    numStock = 5
     backwatch_days =1
     selldelay = 0 # position holding zero based value
     stepcnt = 0
