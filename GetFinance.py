@@ -14,6 +14,24 @@ css_parser = cssutils.CSSParser()
 tablenum1 = [7,14]
 tablenum2 = [6,11]
 
+def mergeFdataCsv(basecsv, secondcsv, newcsv):
+    df1 = pd.read_csv(basecsv, dtype={'stock_code': str}, index_col=None)
+    df2 = pd.read_csv(secondcsv, dtype={'stock_code': str}, index_col=None)
+
+    totallen = len(df2)
+    curdup = 0
+    for i in range(len(df2)):
+        tdf = df1[
+            (df1['stock_code'] == df2.iloc[i]['stock_code']) & (df1['report_nm'] == df2.iloc[i]['report_nm'])].copy()
+        if len(tdf) > 0:
+            print(f'duplicated {curdup}/{totallen}')
+            curdup += 1
+        else:
+            df1 = df1.append(df2.iloc[i])
+            print('appended', df2.iloc[i]['stock_code'], df2.iloc[i]['report_nm'])
+
+    df1.to_csv(newcsv, index=None)
+
 def findCurrencyUnit(ntags):
     res = ''
     existUnit = False
@@ -67,8 +85,6 @@ def getColSpan(_head_rows): # get colspan of first column if column rows are 2
             break
 
     return cols
-
-
 
 def getFinanceValues(soup, typenum, tags_col2, tags2, dic, tags2_second, tags_third = None):
     df = pd.DataFrame()
@@ -306,6 +322,7 @@ def getValues(colnames, values, word, idx = -1, colspan = 1, dt = 1):
     foundstr = foundstr.replace('△', '-')
     foundstr = foundstr.replace('Δ', '-')
     foundstr = foundstr.replace('\xa0', '')
+    foundstr = foundstr.strip(['[',']'])
     if '(' in foundstr:
         foundstr = foundstr.strip('()')
         foundstr = foundstr.replace(",", "")
@@ -323,6 +340,7 @@ def getValues(colnames, values, word, idx = -1, colspan = 1, dt = 1):
     else:
         foundstr_temp = foundstr.replace(",", "")
         foundstr = foundstr_temp.replace(" ", "")
+        foundstr = foundstr.rstrip('-')
         if foundstr.replace('-', '').isnumeric():
             amount = int(foundstr.replace(",", ""))
         else:
@@ -385,13 +403,16 @@ total_df = pd.DataFrame()
 start = 0
 gCurDF = pd.DataFrame()
 gdf_ErrorReport = pd.DataFrame()
+
 # codes= ['010820', '028670', '054300', '225590', '170790', '037030', '037070', '005690', '208340', '046210', '081150', '104480', '246710', '057680', '322180']
 for code in codes:
     # if code == '060310':
     #     continue
-    isnan = fdf[fdf['Symbol'] == code]['Sector'].isna().iloc[0]
-    if len(code) != 6 or isnan == True:
-        continue
+    code = str(code)
+
+    # isnan = fdf[fdf['Symbol'] == code]['Sector'].isna().iloc[0]
+    # if len(code) != 6 or isnan == True:
+    #     continue
 
     df = pd.DataFrame()
 
@@ -402,12 +423,13 @@ for code in codes:
 
     count += 1
 
-    print('\n\nthe %d th code' % count)
+    print('\n\n\n\nthe %d th code' % count)
 
-    if "스팩" in fdf[fdf['Symbol'] == code]['Name'].iloc[0]:
-        continue
+    # if "스팩" in fdf[fdf['Symbol'] == code]['Name'].iloc[0]:
+    #     continue
+
     # if count < 1950:
-    initial_count = 1308
+    initial_count = 282
     if count < initial_count:
         continue
 
@@ -415,7 +437,7 @@ for code in codes:
         print('try code %s' % code)
         df = dart.list(code, start='2000-01-01', end='2021-06-30', kind='A')
     except Exception as e:
-        stockname = fdf[fdf['Symbol']==code]['Name'].iloc[0]
+        # stockname = fdf[fdf['Symbol']==code]['Name'].iloc[0]
         print("Code %s error" % code)
         print(e)
         continue
@@ -559,9 +581,9 @@ for code in codes:
 
         if count ==30000:
             total_df = total_df[total_df['stock_code']!= code].copy()
-            total_df.to_csv(f'datas/finance/fdata_by_count_{initial_count}_{count-1}.csv', index=0)
+            total_df.to_csv(f'datas/finance2/fdata_by_count_{initial_count}_{count}.csv', index=0)
             gdf_ErrorReport = gdf_ErrorReport[gdf_ErrorReport['stock_code']!=code].copy()
-            gdf_ErrorReport.to_csv(f'datas/finance/fdata_error_by_count_{initial_count}_{count-1}.csv', index=0)
+            gdf_ErrorReport.to_csv(f'datas/finance2/fdata_error_by_count_{initial_count}_{count}.csv', index=0)
         pass
 
         # 제무제표 가져온다
@@ -569,7 +591,11 @@ for code in codes:
         # data를 df에 넣는다.
     # if count >= 2000:
     #     print("break!!!")
-    #     break
+#     break
+
+
+
+
     pass
 
 # ==== 0. 객체 생성 ====
