@@ -73,7 +73,7 @@ def get_spans(cell):
 
         return (rep_row, rep_col)
 
-def process_rows(rows, num_rows, num_cols):
+def process_rows(rows, num_rows, num_cols, manip_type = 0):
     """
     INPUT:
         1. rows - a list of table rows ie <tr>...</tr> elements
@@ -98,16 +98,19 @@ def process_rows(rows, num_rows, num_cols):
             while any(data.iloc[i,col_stat:col_stat+rep_col].notnull()):
                 col_stat+=1
 
-            curitems = str(cell).split('<br/>')
-            if len(curitems) == 1:
+            curitems = []
+            replaceVictim = ['\xa0', '\n', '\\u', '\u3000', ' ', '[', ']', '<span>', '</span>']
+            if manip_type == 0:
+                curitems = str(cell).split('<br/>')
+            if len(curitems) <= 1:
                 celltxt = cell.getText()
-                celltxt = replaceMultiple(celltxt, ['\xa0', '\n', '\\u', ' ', '[', ']'], '')
+                celltxt = replaceMultiple(celltxt, replaceVictim, '')
             if len(curitems) > 1:
-                curitems = list(map(lambda x: replaceMultiple(x, ['\xa0', '\n', '\\u', ' ', '[', ']'], ''), curitems))
+                curitems = list(map(lambda x: replaceMultiple(x, replaceVictim, ''), curitems))
                 if '">' in curitems[0]:
                     curitems[0] = curitems[0][curitems[0].find('>') + 1:]
                 curitems[-1] = curitems[-1].replace('</td>', '')
-                if len(curitems) > 4:
+                if len(curitems) > 6:
                     elements.append(curitems[1:])
                 celltxt = curitems[0]
             data.iloc[i:i+rep_row,col_stat:col_stat+rep_col] = celltxt
@@ -119,9 +122,9 @@ def process_rows(rows, num_rows, num_cols):
     return data
 
 
-def getDataFrame(HtmlTable):
+def getDataFrame(HtmlTable, manipl_type = 0):
     rows, num_rows, num_cols = pre_process_table(HtmlTable)
-    df_table = process_rows(rows, num_rows, num_cols)
+    df_table = process_rows(rows, num_rows, num_cols, manipl_type)
     return df_table
 
 
@@ -133,7 +136,9 @@ def findTableforWord(tables, wordlist):
     for table in tables:
         rows = [x for x in table.find_all('tr')]
         for row in rows:
-            row_str = replaceMultiple(str(row), ['\xa0', '\n', '\\u', ' ', '[', ']'], '')
+            row_str = replaceMultiple(str(row), ['\xa0', '?', '\n', '\\u', ' ', '\u3000', '[', ']'], '')
+            if '금융감독원' in row_str or '회계법인' in row_str or '보고서' in row_str or '회계기준' in row_str:
+                break
             for word in wordlist:
                 if word in row_str:
                     foundWord = word

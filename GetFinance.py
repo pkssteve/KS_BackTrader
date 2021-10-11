@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import OpenDartReader
 import sqlite3
 import FinanceDataReader as fdr
@@ -136,10 +137,16 @@ def getRowIndex(row_names, findwords, startIndex = 0):
     return row_index, foundStr
 
 
-def getVal(finance_df, findWords, valid_col_start, valid_col_end, startIndex = 0):
+def getVal(finance_df, findWords, valid_col_start, valid_col_end, startIndex = 0, fixedIndex=-1):
     if type(findWords) == str:
         findWords = [findWords]
-    row_index, foundWord = getRowIndex(list(finance_df[0]), findWords, startIndex)
+    if finance_df is None or len(finance_df) ==0:
+        return -1
+    foundWord = ''
+    if fixedIndex == -1:
+        row_index, foundWord = getRowIndex(list(finance_df[0]), findWords, startIndex)
+    else:
+        row_index = fixedIndex
     val = -1
 
     if row_index == -1:
@@ -147,23 +154,38 @@ def getVal(finance_df, findWords, valid_col_start, valid_col_end, startIndex = 0
 
     for i in range(valid_col_start, valid_col_end + 1):
         element = finance_df.iloc[row_index, i]
-        tags = re.findall(r'△*Δ*\(*-*\)*[\d+,*]+\)*', element)
+        if type(element) is not str and np.isnan(element):
+            continue
+        tags = re.findall(r'\(*△*Δ*\)*\(*-*\)*[\d,.]+\)*', element)
         if len(tags) > 0:
             # data manipulation
             tempstr = tags[0]
-            tempstr = tempstr.replace('(-)', '-')
-            tempstr = tempstr.replace('--', '-')
+
+            for k in range(20):
+                if '--' in tempstr:
+                    tempstr = tempstr.replace('--', '-')
+                else:
+                    break
+
             tempstr = tempstr.replace('△', '-')
             tempstr = tempstr.replace('Δ', '-')
+            tempstr = tempstr.replace('()', '-')
+            tempstr = tempstr.replace('(-)', '-')
             tempstr = tempstr.replace(',', '')
+            tempstr = tempstr.replace('.', '')
             tempstr = tempstr.rstrip('-')
+            tempstr = tempstr.rstrip(')')
 
+            if tempstr == '':
+                break
             if '(' in tempstr:
                 tempstr = tempstr.strip('()')
+
                 val = -int(tempstr)
                 if '손실(이익)' in foundWord:
                     val = val if val > 0 else -val
             else:
+
                 val = int(tempstr)
                 if '손실' in foundWord:
                     val = -val if val > 0 else val
@@ -172,17 +194,18 @@ def getVal(finance_df, findWords, valid_col_start, valid_col_end, startIndex = 0
     if '판매비' in foundWord and val == -1:
         val = getVal(finance_df, '판매비', valid_col_start, valid_col_end, row_index + 1)
         val += getVal(finance_df, '관리비', valid_col_start, valid_col_end, row_index + 1)
+        val = abs(val)
 
     return val
 
-def verifyFdata(revenue, sell_cost, gross_profit, operating_cost, operating_cost2, operating_income, cost3_arg):
+def verifyFdata(revenue, sell_cost, gross_profit, operating_cost, operating_cost2, operating_cost3, operating_income, cost3_arg):
     calcRevenue1 = gross_profit + sell_cost
     calcRevenue2 = operating_cost + operating_income
     calcRevenue3 = operating_cost + operating_cost2 + operating_income
     finalCalcRevenue = calcRevenue1
     calcGrossProfit = operating_cost + operating_income
     calcGrossProfit2 = operating_cost + operating_income + cost3_arg  # cost3 is 대손상각비
-
+    calcGrossProfit3 = operating_cost3 + operating_income
     if sell_cost != -1 and gross_profit != -1:
         if abs(revenue - calcRevenue1) <= 2:
             print('Sales was properly parsed')
@@ -190,15 +213,11 @@ def verifyFdata(revenue, sell_cost, gross_profit, operating_cost, operating_cost
             printError('Wrong!! Sales was wrong. sales %d cost %d gross profit %d diff %d' % (
             revenue, sell_cost, gross_profit, revenue - calcRevenue1))
 
-        if abs(gross_profit - calcGrossProfit) <= 2:
+        if abs(gross_profit - calcGrossProfit) <= 2 or abs(gross_profit - calcGrossProfit2) <= 2 or abs(gross_profit - calcGrossProfit3) <= 2:
             print('Gross Profit values was properly parsed')
         else:
-
-            if abs(gross_profit - calcGrossProfit2) <= 2:
-                print('Gross Profit values was properly parsed')
-            else:
-                printError('Wrong!! Gross Profit was wrong. gross profit %d cost2 %d operating income %d diff1 %d diff2 %d' % (
-                gross_profit, operating_cost, operating_income, gross_profit - calcGrossProfit, gross_profit - calcGrossProfit2))
+            printError('Wrong!! Gross Profit was wrong. gross profit %d cost2 %d operating income %d diff1 %d diff2 %d' % (
+            gross_profit, operating_cost, operating_income, gross_profit - calcGrossProfit, gross_profit - calcGrossProfit2))
     else:
         if abs(revenue - calcRevenue2) <= 2 or abs(revenue - calcRevenue3) <= 2:
             print('Sales was properly parsed')
@@ -209,14 +228,34 @@ def verifyFdata(revenue, sell_cost, gross_profit, operating_cost, operating_cost
 
 def getFdataFromDF(finance_df, dic, finance_df2):
     df = pd.DataFrame()
+    words_sales = [dic['매출'], '.매출액', '수익(매출액)']
+    words_salesl_cost = [dic['매출원가']]
+    words_gp= [dic['매출총이익'], dic['매출총이익2'], '매출총익', '매출총손익', '매출총손실']
+    words_opcost = [dic['판매비'], '영업관리비용', '판매관리비', '.일반관리비']
+    words_opincome = ['영업손익','영업익익','영영이익', dic['영업이익'], dic['영업이익2'], '영억이익', '영업손실']
 # 데이터 얻기
     target_df = finance_df
     # Count a number of columns of the latest th
     total_col_count= len(target_df.columns)
     th_col_count = 1
-    latestTh = target_df.iloc[0, 1]
-    for i in range(2, total_col_count):
-        if target_df.iloc[0, i] == latestTh:
+    latestTh=''
+    firstThColumnIndex = -1
+    th_row = 0
+    for row_num in range(2):
+        for i in range(1, total_col_count):
+            if "기" in target_df.iloc[row_num, i] or "금액" in target_df.iloc[row_num, i] or len(re.findall(r'\d+',target_df.iloc[row_num, i]))>0:
+                latestTh = target_df.iloc[row_num, i]
+                firstThColumnIndex = i
+                th_row = row_num
+                break
+        if firstThColumnIndex != -1:
+            break
+    if latestTh == '' or firstThColumnIndex == -1 :
+        printError('=========================================There is no th column in header')
+    # latestTh = target_df.iloc[0, 1]
+
+    for i in range(firstThColumnIndex+1, total_col_count):
+        if target_df.iloc[th_row, i] == latestTh:
             th_col_count += 1
         else:
             break
@@ -234,31 +273,38 @@ def getFdataFromDF(finance_df, dic, finance_df2):
     if accum_count == 0:
         accum_count = th_col_count
 
-    valid_col_start = th_col_count - accum_count + 1
-    valid_col_end = th_col_count
+    valid_col_start = firstThColumnIndex + th_col_count - accum_count
+    valid_col_end = firstThColumnIndex + (th_col_count-1)
 
 
     # row 찾기 using multiple parameter ex. [dic['매출총이익'], dic['매출총손실']]
-    revenue = getVal(target_df, dic['매출'], valid_col_start, valid_col_end)
-    sell_cost = getVal(target_df, dic['매출원가'], valid_col_start, valid_col_end)
+    revenue = abs(getVal(target_df, words_sales, valid_col_start, valid_col_end))
+    sell_cost = abs(getVal(target_df, words_salesl_cost, valid_col_start, valid_col_end))
     sell_cost = sell_cost if sell_cost > 0 else -sell_cost
-    gross_profit = getVal(target_df, [dic['매출총이익'], dic['매출총이익2'], '매출총손익'], valid_col_start, valid_col_end)
+    gross_profit = getVal(target_df, words_gp, valid_col_start, valid_col_end)
+
     operating_cost2 = 0
+    operating_cost3 = 0
     if gross_profit != -1:
-        operating_cost = getVal(target_df, [dic['판매비'], '영업관리비용', '판매관리비'], valid_col_start, valid_col_end)
+        operating_cost = abs(getVal(target_df, words_opcost, valid_col_start, valid_col_end))
+        row_index, foundWord = getRowIndex(list(target_df[0]), words_gp)
+        row_index2, foundWord2 = getRowIndex(list(target_df[0]), words_opincome)
+        for target_row in range(row_index+1, row_index2):
+            operating_cost3 += abs(getVal(target_df, 'Dummy', valid_col_start, valid_col_end, 0, target_row))
+
     else:
-        operating_cost = getVal(target_df, '영업비용', valid_col_start, valid_col_end)
-        operating_cost2 = getVal(target_df, [dic['판매비'], '영업관리비용', '판매관리비'], valid_col_start, valid_col_end)
-    operating_cost = operating_cost if operating_cost > 0 else -operating_cost
-    costs3 = getVal(target_df, ['대손상각비'], valid_col_start, valid_col_end)
-    operating_income = getVal(target_df, [dic['영업이익'], dic['영업이익2'], '영업손익'], valid_col_start, valid_col_end)
+        operating_cost = abs(getVal(target_df, '영업비용', valid_col_start, valid_col_end))
+        operating_cost2 = abs(getVal(target_df, words_opcost, valid_col_start, valid_col_end))
+    operating_cost = abs(operating_cost)
+    costs3 = abs(getVal(target_df, ['대손상각비'], valid_col_start, valid_col_end))
+    operating_income = getVal(target_df, words_opincome, valid_col_start, valid_col_end)
     if operating_income == -1:
         target_df = finance_df2
-        operating_income = getVal(target_df, [dic['영업이익'], dic['영업이익2'], '영업손익'], valid_col_start, valid_col_end)
-    net_income = getVal(target_df, [dic['당기순이익']], valid_col_start, valid_col_end)
+        operating_income = getVal(target_df, words_opincome, valid_col_start, valid_col_end)
+    net_income = getVal(target_df, ['분기순이익', '반기순이익', dic['당기순이익']], valid_col_start, valid_col_end)
 
 # 데이터 검증
-    verifyFdata(revenue, sell_cost, gross_profit, operating_cost, operating_cost2, operating_income, costs3)
+    verifyFdata(revenue, sell_cost, gross_profit, operating_cost, operating_cost2, operating_cost3, operating_income, costs3)
 
 
 
@@ -558,7 +604,8 @@ quartcode = ['11013', '11012', '11014', '11011'] # [1분기, 반기, 3분기, �
 monthToQuarter ={3:4, 6:1, 9:2, 12:3}
 quarterToWords ={1:"분기", 2:"반기", 3:"분기", 4:"사업"}
 strToQuater = {"분기보고서3":1, "반기보고서6":2, "분기보고서9":3, "사업보고서12":4,
-               "사업보고서3":4, "분기보고서6":1, "반기보고서9":2, "분기보고서12":3}
+               "사업보고서3":4, "분기보고서6":1, "반기보고서9":2, "분기보고서12":3,
+               "사업보고서6":4, "반기보고서12":2}
 
 fdic = {"매출":"매출", "매출원가":"매출원가", "매출총이익":"매출총이익", "매출총이익2":"매출총손실", "판매비":"판매비", \
                 "영업이익":"영업이익", "영업이익2":"영업손실", "당기순이익":"당기순이익", "당기순이익2":"당기순손실"}
@@ -611,7 +658,7 @@ for code in codes:
         continue
 
     # if count < 1950:
-    initial_count = 1
+    initial_count = 2242
     if count < initial_count:
         continue
 
@@ -675,9 +722,12 @@ for code in codes:
         gCurDF[['url']] = url
 
         # for debugging
-        # url = 'http://dart.fss.or.kr/report/viewer.do?rcpNo=20000513000086&dcmNo=59196&eleId=2006&offset=218914&length=33530&dtd=dart2.dtd'
-        # url = 'http://dart.fss.or.kr/report/viewer.do?rcpNo=20070515001214&dcmNo=1643938&eleId=3221&offset=334231&length=486690&dtd=dart2.dtd' # no currency unit
-        url = 'http://dart.fss.or.kr/report/viewer.do?rcpNo=20040330002197&dcmNo=810703&eleId=10399&offset=1136583&length=389195&dtd=dart2.dtd'
+        # url = 'http://dart.fss.or.kr/report/viewer.do?rcpNo=20000518000043&dcmNo=61752&eleId=1517&offset=160323&length=31793&dtd=dart2.dtd' # no operating income
+        # --> ['034730', '025530', '019550', '036120', '040610', '057030', '000050', '010130', '006050', '011780', 024110, 004270, 005290, 030350, 000060, 021880, 002870] 인데 어쩔수 없음. 수동파싱
+        # error ['20200515001336', 20000812000054, 20010813000565, 20180402004471, 20180515002137]
+        # url = 'http://dart.fss.or.kr/report/viewer.do?rcpNo=20200228003204&dcmNo=7112077&eleId=15&offset=95903&length=21561&dtd=dart3.xsd' # invalid quarter and no sales
+        # url = 'http://dart.fss.or.kr/report/viewer.do?rcpNo=20030814000158&dcmNo=661719&eleId=4911&offset=567483&length=426602&dtd=dart2.dtd' # no op
+        # code 048770 has many invalid quater issues
 
 
         print(report_nm, rcept_no, url)
@@ -692,64 +742,24 @@ for code in codes:
 
         # html = html.replace(' ', '')
         soup = BeautifulSoup(html, "html5lib")
-        # tags = soup.select("#_per")
 
-        # financial state
-        # tableIndex = findTableIndex("매출채권")
-
-        # if tableIndex == -1:
-        #     print("there is no table to proper (find:매출채권)")
-        #
-        #
-        # tags_col = soup.select("body > table:nth-child(%d) > tbody > tr > td:nth-child(1)" % tableIndex)
-        # tags = soup.select("body > table:nth-child(%d) > tbody > tr > td:nth-child(2)" % tableIndex)
-        #
-        #
-        #
-        # toks_col = str(tags_col).split('<br/>')
-        # toks = str(tags).split('<br/>')
-
-        # Income statement
-        # tableIndex = findTableIndex("매출총이익")
-        # if tableIndex == -1:
-        #     tableIndex = findTableIndex("매출총손실")
-        #     if tableIndex == -1:
-        #         print("there is no table to proper (find:매출총이익). changed type2")
-        #         typenum = 2
-        #         dic = fdic2
-        #         tableIndex = findTableIndex("영업수익")
-        # if tableIndex == -1:
-        #     print("there is no table to find. So skipped this report")
-        #     continue
-        #
-        # tableIndex2 = findTableIndex("영업이익", tableIndex)
 
         # tables = soup.select("body > table:nth-child(%d)" % tableIndex)
         tables = soup.select("body > table")
         # tables = soup.select("table")
-        tableIndex, table1, foundStr = tp.findTableforWord(tables, ['매출총이익', '매출총손실', '매출총손익', '영업수익'])
+        tableIndex, table1, foundStr = tp.findTableforWord(tables, ['매출총이익', '매출총손실', '매출총손익', '매출총익', '영업수익', '.매출액','수익(매출액)', '.매출금액', '.매출총액', '영업이익', '영업익익'])
         if tableIndex == -1:
             printError("=========================================================  there is no table matched")
             continue
         if foundStr == '영업수익':
             dic = fdic2
         table2 = None
-        tableIndex2, table2, foundStr2 = tp.findTableforWord(tables, '영업이익')
-
+        tableIndex2, table2, foundStr2 = tp.findTableforWord(tables, ['영업이익', '영업손익', '영억이익', '영업손실', '영업익익', '영영이익'])
 
 
         currency_unit = 1
-        unittable = tp.getDataFrame(tables[tableIndex - 1])
+        unittable = tp.getDataFrame(tables[tableIndex - 1], 1)
         currency_unit_str, existUnit = findCurrencyUnit2(unittable)
-
-        # for j in range(1,4):
-        #
-        #     tags_tableHeader = soup.select("body > table:nth-child(%d) > tbody > tr > td" % (tableIndex - j))
-        #     currency_unit_str, existUnit = findCurrencyUnit(tags_tableHeader)
-        #     if currency_unit_str != '' and currency_unit_str in unit_dic:
-        #         if j==3:
-        #             printError('===============================================Warning : unit table index -3')
-        #         break
 
         if currency_unit_str != '' and currency_unit_str in unit_dic:
             currency_unit = unit_dic[currency_unit_str]
@@ -757,30 +767,7 @@ for code in codes:
         elif existUnit == False:
             printError(f'===========================================there is no currency unit in the table. currency_unit_str: {currency_unit_str}')
 
-
-
-        tags_col2 = soup.select("body > table:nth-child(%d) > tbody > tr > td:nth-child(1)" % (tableIndex))
-        tags2 = soup.select("body > table:nth-child(%d) > tbody > tr > td:nth-child(2)" % (tableIndex))
-        tags2_second = soup.select("body > table:nth-child(%d) > tbody > tr > td:nth-child(3)" % (tableIndex))
-        tags_op = None
-        if tableIndex != tableIndex2:
-            tags_op = soup.select("body > table:nth-child(%d) > tbody > tr > td:nth-child(2)" % tableIndex2)
-
-
-        # if (len(tags_col2) == 0) or (len(tags2) == 0):
-        #     print("column lines %d value lines %d. so try parsing using pandas's read_html")
-        #     dfs = pd.read_html(url, header=1)
-        #     parse_type = 2
-
-
         df_finance = getFdataFromDF(table1, dic, table2)
-
-
-        # if parse_type == 1:
-        #     df_finance = getFinanceValues(soup, typenum, tags_col2, tags2, dic, tags2_second, tags_op)
-        # elif parse_type == 2:
-        #     print("Preparing...")
-
 
 
         if len(df_finance) == 0:
