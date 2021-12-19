@@ -12,12 +12,6 @@ def replaceMultiple(origin, strlist, replace):
     return origin
 
 
-
-
-
-
-
-
 def pre_process_table(table):
     """
     INPUT:
@@ -91,7 +85,7 @@ def process_rows(rows, num_rows, num_cols, manip_type = 0):
         for j, cell in enumerate(row.find_all(['td', 'th'])):
             rep_row, rep_col = get_spans(cell)
 
-            #print("cols {0} to {1} with rep_col={2}".format(col_stat, col_stat+rep_col, rep_col))
+            #print("cols {0} to {1} with rep_col={2}".format    (col_stat, col_stat+rep_col, rep_col))
             #print("\trows {0} to {1} with rep_row={2}".format(i, i+rep_row, rep_row))
 
             #find first non-na col and fill that one

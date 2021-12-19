@@ -42,7 +42,7 @@ def getTargetCandle(df, targetDT, listColumns, timeformat):
 if __name__ == "__main__":
 
     # basedir = "./datas/coin/RM_D"
-    # basedir = "./datas/KOSDAQ_1D_3"
+    # basedir = "./datas/KOSDAQ_1D_6"
     basedir = "./datas/KOREA"
     copydir = "./datas/coin/RM_D"
     listdf = []
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     mdf=pd.DataFrame()
     tickerCnt = 0
 
-    start_date = "2015-03-05"
+    start_date = "2018-03-05"
     end_date = "2021-03-30"
 
     coinprofit = {}
@@ -94,10 +94,13 @@ if __name__ == "__main__":
     buycash = 0
     port_value = 0
 
-    numStock = 5
+    numStock = 10
     backwatch_days =1
     selldelay = 0 # position holding zero based value
     stepcnt = 0
+
+    diff_bound = 0.1
+    diff_upperbound = 0.15
 
     init_cash = 5000
     unitbuy = (init_cash / numStock)
@@ -121,6 +124,9 @@ if __name__ == "__main__":
     vdf = pd.DataFrame()
     invalidCnt = 0
     trade_hist = pd.DataFrame(columns = ['Date', 'Stock', 'Buy', 'Sell'])
+
+    features = pd.DataFrame(columns=['Diff'])
+
     for i in range(0, len(btc)):
 
         if i > len(btc[btc['macd'].isna()]) + 20:
@@ -246,8 +252,9 @@ if __name__ == "__main__":
                     # and btc.loc[i, 'macd'] > btc.loc[i - 1, 'macd']:
                     longlist = {}
                     shortlist = {}
-                    for j in range(5, 26):
+                    for j in range(5, 5+numStock):
                         stockname = mclose_p.iloc[j]['Name']
+                        diff = mclose_p.iloc[j]['Diff']
                         curopen = curOpen[curOpen['Name'] == stockname].iloc[0, 0]
                         curhigh = curHigh[curHigh['Name'] == stockname].iloc[0, 0]
                         curclose = curClose[curClose['Name'] == stockname].iloc[0, 0]
@@ -257,7 +264,10 @@ if __name__ == "__main__":
                         ibs = (curclose-curopen)/(curhigh-curopen)
 
                         # if ibs <= 0.3:
-                        longlist[stockname] = curclose
+                        if diff > diff_bound and diff < diff_upperbound:
+                        # if diff < 0.5:
+                            longlist[stockname] = curclose
+                            features = features.append({'Diff':diff}, ignore_index=True)
 
                         if len(longlist) == numStock:
                             break
@@ -343,5 +353,7 @@ if __name__ == "__main__":
     ax2.legend(['KOSDAQ MACD', 'KOSDAQ MACD Signal'])
     ax3.legend(['Portfolio Value'])
     print("Init cash: %.2f, Final Value: %.2f, Profit: %.2f%%, CAGR: %.2f%% MDD: %.1f%%" % (init_cash, final_value, ((final_value-init_cash)/init_cash)*100, cagr, mdd))
+    print(f'Base Dir : {basedir}')
     print("Invalid Count:%d, Backwatch day:%d, Stock Number:%d, Sell Delay:%d" % (invalidCnt, backwatch_days, numStock, selldelay))
     print("MDD Date %s" % mdd_date)
+    print(f"Diff Lower Bound : {diff_bound}, Upper Bound : {diff_upperbound}")

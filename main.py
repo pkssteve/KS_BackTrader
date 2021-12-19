@@ -36,6 +36,7 @@ import ST_Volatibility as vol
 import ST_RSI_Pingpong as rp
 import ST_Williams_R as wr
 import ST_Williams_R2 as wr2
+import ST_Williams_R_Nov2 as wr_n
 
 if __name__ == "__main__":
     # Create a cerebro entity
@@ -49,9 +50,10 @@ if __name__ == "__main__":
     # cerebro.addstrategy(tt.TwentyTen, printLog=True)
     # cerebro.addstrategy(ma.MA5, printLog=True)
     # cerebro.addstrategy(vol.VOLA, printLog=True)
-    cerebro.addstrategy(rp.RSIPP, printLog=True)
+    # cerebro.addstrategy(rp.RSIPP, printLog=True)
     # cerebro.addstrategy(wr.WillR, printLog=True)
     # cerebro.addstrategy(wr2.WillR2, printLog=True)
+    cerebro.addstrategy(wr_n.WillR_Nov2, printLog=True)
     #
     # strats = cerebro.optstrategy(
     #     sc.MyFirstStrategy,
@@ -70,11 +72,12 @@ if __name__ == "__main__":
 
     # df2 = pd.read_csv("./datas/coin/BTCUSDT.csv",
     #                   parse_dates=True, index_col=0)
-    filename = "./datas/coin/RM_D/BTCUSDT_D.csv"
-    # filename = "./datas/STOCK/AAPL.csv"
+    # filename = "./datas/coin/RM_D/BTCUSDT_D.csv"
+    filename = "./datas/BTC/btc_1H.csv"
+    # filename = "./datas/STOCK/NFLX.csv"
     # df2 = pd.read_csv(filename, parse_dates=True, index_col=1)
     df2 = pd.read_csv(filename, parse_dates=True, index_col=0)
-    # df2 = df2["2018-03-01":]
+    df2 = df2['2017-01-01':'2017-12-30']
     # df2 = df2["2019-01-02":]
 
     mons = (df2.index[-1] - df2.index[0]) / np.timedelta64(1, 'M')
@@ -90,9 +93,10 @@ if __name__ == "__main__":
 
     cerebro.adddata(data1)
 
-    # cerebro.replaydata(data1, timeframe=bt.TimeFrame.Minutes, compression=60)
+    cerebro.replaydata(data1, timeframe=bt.TimeFrame.Days, compression=24)
     # Upsampleing data
     # cerebro.replaydata(data1, timeframe = bt.TimeFrame.Days, compression = 1)
+    # cerebro.resampledata(data1, timeframe= bt.TimeFrame.Days, compression=1)
 
     # Analyzer
     cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name="mysharpe")
@@ -127,7 +131,7 @@ if __name__ == "__main__":
         fv = thestrat.buyHist['PureOutValue'].sum()
         profit_margin = thestrat.finalProfit
         profit = thestrat.finalProfitPure
-        initialcash = thestrat.buyHist['InitValue'].count()*10000
+        initialcash = thestrat.buyHist['InitValue'].count() * 10000
 
     print("Sharpe Ratio:", thestrat.analyzers.mysharpe.get_analysis())
     print("Max Draw Down: %.2f" %
@@ -150,11 +154,11 @@ if __name__ == "__main__":
 
     # Plotting incredibly is a line operation
 
-    cerebro.plot(iplot=False)
+    cerebro.plot(iplot=False, style='candle')
 
     # cf.go_offline(connected=True)
 
-    # b = Bokeh(style="bar")
+    # b = Bokeh(style="candle")
     # cerebro.plot(b, iplot=False)
 
     # py.offline.plot_mpl(result[0][0], filename="simple_candlestick.html")

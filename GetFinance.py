@@ -301,7 +301,9 @@ def getFdataFromDF(finance_df, dic, finance_df2):
     if operating_income == -1:
         target_df = finance_df2
         operating_income = getVal(target_df, words_opincome, valid_col_start, valid_col_end)
-    net_income = getVal(target_df, ['분기순이익', '반기순이익', dic['당기순이익']], valid_col_start, valid_col_end)
+    net_income = getVal(target_df, ['분기순이익', '분기순손익','분기순손실','반기순손실','분(당)기순이익','분(반,당)기순이익', '분기(당기)순이익', '반기(분기)순이익',
+                                    '당(분)기순이익', '당(반)기순이익', '당기기순이익','당반기순이익', '당(전)기순이익', '당(분)기순손실', '당(반)기순손실', '당기(분기)순이익',
+                                    '반기순손익','당기순손실','당기순손익', '반기순이익', dic['당기순이익']], valid_col_start, valid_col_end)
 
 # 데이터 검증
     verifyFdata(revenue, sell_cost, gross_profit, operating_cost, operating_cost2, operating_cost3, operating_income, costs3)
@@ -658,7 +660,7 @@ for code in codes:
         continue
 
     # if count < 1950:
-    initial_count = 2242
+    initial_count = 0
     if count < initial_count:
         continue
 
