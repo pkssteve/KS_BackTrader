@@ -220,15 +220,15 @@ class RSIPP(bt.Strategy):
                 if not self.position:
                     return retval
 
-                if self.buyprice * 0.97 > self.dataclose[0]:
+                if self.buyprice * 0.91 > self.dataclose[0]:
                     retval = -1
                     self.save_RSI("not started", len(self),
                                   self.dataclose[0], self.RSI[0])
 
-                elif self.RSI[-1] > 50 and self.RSI[0] <= 50:
-                    retval = -1
-                    self.save_RSI("not started", len(self),
-                                  self.dataclose[0], self.RSI[0])
+                # elif self.RSI[-1] > 50 and self.RSI[0] <= 50:
+                #     retval = -1
+                #     self.save_RSI("not started", len(self),
+                #                   self.dataclose[0], self.RSI[0])
 
 
                 # elif self.buyprice * 1.3 < self.dataclose[0]:

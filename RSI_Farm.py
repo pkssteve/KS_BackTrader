@@ -316,10 +316,10 @@ class RSIFarm(bt.Strategy):
 
         if self.margincall == 1:
             self.curcash = 0
-
-        self.finalProfit = (self.buyHist['OutValue'].sum() / (self.buyHist['InitValue'].count()*10000)) * 100 -100
-        self.finalProfitNet = (self.buyHist['NetValue'].sum() / (self.buyHist['InitValue'].count()*10000)) * 100 - 100
-        self.finalProfitPure = (self.buyHist['PureOutValue'].sum() / (self.buyHist['InitValueFix'].count()*10000)) * 100 - 100
+        if len(self.buyHist) > 0:
+            self.finalProfit = (self.buyHist['OutValue'].sum() / (self.buyHist['InitValue'].count()*10000)) * 100 -100
+            self.finalProfitNet = (self.buyHist['NetValue'].sum() / (self.buyHist['InitValue'].count()*10000)) * 100 - 100
+            self.finalProfitPure = (self.buyHist['PureOutValue'].sum() / (self.buyHist['InitValueFix'].count()*10000)) * 100 - 100
 
 
 

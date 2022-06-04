@@ -26,6 +26,7 @@ pd.set_option("max_colwidth", 250)
 
 
 
+
 def mergeFdataCsv(basecsv, secondcsv, newcsv):
     df1 = pd.read_csv(basecsv, dtype={'stock_code': str}, index_col=None)
     df2 = pd.read_csv(secondcsv, dtype={'stock_code': str}, index_col=None)

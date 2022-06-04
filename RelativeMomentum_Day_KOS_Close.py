@@ -30,7 +30,7 @@ def resampleCandle(df, str):
 if __name__ == "__main__":
 
     # basedir = "./datas/coin/RM_D"
-    basedir = "./datas/KOSDAQ"
+    basedir = "./datas/KOREA/"
     copydir = "./datas/coin/RM_D"
     listdf = []
     btc =pd.DataFrame()
@@ -50,7 +50,7 @@ if __name__ == "__main__":
             if "DS_Store" in filename:
                 continue
 
-            temp = pd.read_csv(filename, parse_dates=True, index_col=0)
+            temp = pd.read_csv(filename, parse_dates=True)
             temp[['Name']] = coinname
 
             coinprofit[coinname] = []
@@ -66,6 +66,10 @@ if __name__ == "__main__":
                 listdf.append(temp.copy())
                 tickerCnt += 1
 
+    tempdf = pd.read_csv('./datas/STOCK/US500.csv', parse_dates=True)
+    btc = tempdf.copy()
+    btc = btc[(btc['Date'] >= start_date) & (btc['Date'] <= end_date)].reset_index(drop=True).copy()
+
     macd, macd_s, macd_hist = talib.MACDEXT(btc['Close'], fastperiod=14, fastmatype=talib.MA_Type.EMA, slowperiod=21, slowmatype=talib.MA_Type.EMA, signalmatype=talib.MA_Type.EMA, signalperiod = 2)
 
     btc['macd'] = macd
@@ -79,7 +83,7 @@ if __name__ == "__main__":
     buycash = 0
     port_value = 0
 
-    numStock = 5
+    numStock = 10
     backwatch_days =1
     selldelay = 0 # position holding zero based value
     stepcnt = 0
@@ -120,6 +124,9 @@ if __name__ == "__main__":
             preClose = mdf[mdf['Datetime'] == predate][['Close', 'Name']].copy()
             preClose.index = range(0, len(preClose))
 
+            if len(curClose) ==0:
+                continue
+
             ## merge for diff rate caculation and descending sort by diff rate
             mclose = pd.merge(curClose, pastClose, how='left', on='Name')
             mclose2 = pd.merge(curOpen, pastClose, how='left', on='Name')
@@ -132,15 +139,14 @@ if __name__ == "__main__":
             mclose_m2 = mclose2.sort_values(by=['Diff'], axis=0, ascending=True).copy()
 
 
-
             # buy
             if position == 0:
-                if btc.loc[i, 'macd'] > btc.loc[i, 'macd_s']:
+                if btc.loc[i, 'Change'] > 0.005:
                     # and btc.loc[i, 'macd'] > btc.loc[i-1, 'macd']:
                     longlist = {}
                     shortlist = {}
                     for j in range(0,numStock):
-                        longlist[mclose_p.iloc[j]['Name']] = curClose[curClose['Name']==mclose_p.iloc[j]['Name']].iloc[0,0]
+                        longlist[mclose_p2.iloc[j]['Name']] = curOpen[curOpen['Name']==mclose_p2.iloc[j]['Name']].iloc[0,0]
 
                     position = 1
                     position_day = datetime.datetime.strptime(curdate, "%Y-%m-%d")
@@ -160,7 +166,7 @@ if __name__ == "__main__":
 
             ## make coin list for long position
             if position == 1:
-                targetdate = position_day + datetime.timedelta(days=selldelay+1)
+                targetdate = position_day + datetime.timedelta(days=selldelay)
                 td_s = targetdate.strftime("%Y-%m-%d")
 
             if position == 1 and td_s <= curdate:
@@ -172,8 +178,8 @@ if __name__ == "__main__":
 
                 for key, val in longlist.items():
                     buycash += unitbuy
-                    if len(curOpen[curOpen['Name'] == key]) > 0:
-                        cur_price = curOpen[curOpen['Name'] == key].iloc[0, 0]
+                    if len(curClose[curClose['Name'] == key]) > 0:
+                        cur_price = curClose[curClose['Name'] == key].iloc[0, 0]
                         profit = (cur_price - val) / val
                         result_value = unitbuy + (unitbuy * (profit * leverage))
                         result_value = max(result_value, 0)
@@ -254,6 +260,7 @@ if __name__ == "__main__":
     subtitle = "Profit %.1f%%, CAGR %.1f%% MDD %.1f%% in %s ~ %s" % (((final_value-init_cash)/init_cash)*100, cagr, abs(mdd), start_date, end_date)
     ax1.set_title(subtitle)
     ax3.set_title("Leverage x %d" % leverage)
+    btc = btc.rename(columns={'Date': 'Datetime'})
     vdf2 = btc.merge(vdf, how='left', on='Datetime')
     btc[['Close', 'Datetime']].plot(ax=ax1)
     btc[['macd', 'macd_s']].plot(ax=ax2)

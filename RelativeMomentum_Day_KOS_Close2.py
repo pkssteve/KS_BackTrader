@@ -56,6 +56,7 @@ if __name__ == "__main__":
     coinprofit = {}
 
 
+
     with os.scandir(basedir) as entries:
         for f in entries:
             filename = basedir + '/' + f.name
@@ -81,6 +82,9 @@ if __name__ == "__main__":
                 listdf.append(temp.copy())
                 tickerCnt += 1
 
+    tempdf = pd.read_csv('./datas/STOCK/US500.csv', parse_dates=True)
+    btc = tempdf.copy()
+    btc = btc[(btc['Date']>=start_date) & (btc['Date']<=end_date)].reset_index(drop=True).copy()
     macd, macd_s, macd_hist = talib.MACDEXT(btc['Close'], fastperiod=14, fastmatype=talib.MA_Type.EMA, slowperiod=21, slowmatype=talib.MA_Type.EMA, signalmatype=talib.MA_Type.EMA, signalperiod = 2)
 
     btc['macd'] = macd
@@ -99,8 +103,8 @@ if __name__ == "__main__":
     selldelay = 0 # position holding zero based value
     stepcnt = 0
 
-    diff_bound = 0.1
-    diff_upperbound = 0.15
+    diff_bound = 0.00
+    diff_upperbound = 0.50
 
     init_cash = 5000
     unitbuy = (init_cash / numStock)
@@ -133,7 +137,7 @@ if __name__ == "__main__":
             curdate = btc.iloc[i, 0]
             if pd.isna(btc.loc[i, 'macd']) == True:
                 continue
-
+            print('cur date : ', curdate)
             datetype = datetime.datetime.strptime(curdate, "%Y-%m-%d")
             pastdatetype = datetype - datetime.timedelta(days=backwatch_days)
             pastdate = datetime.datetime.strftime(pastdatetype, "%Y-%m-%d")
@@ -148,6 +152,8 @@ if __name__ == "__main__":
 
             ## get close price in target old/cur datetime
             curClose = mdf[mdf['Datetime'] == curdate][['Close', 'Name']].copy()
+            if len(curClose) ==0:
+                continue
             curClose.index = range(0, len(curClose))
             curOpen = mdf[mdf['Datetime'] == curdate][['Open', 'Name']].copy()
             curOpen.index = range(0, len(curOpen))
@@ -157,7 +163,6 @@ if __name__ == "__main__":
             pastClose.index = range(0, len(pastClose))
             preClose = getTargetCandle(mdf, predatedt, ['Datetime', 'Close','Name'], "%Y-%m-%d")
             preClose.index = range(0, len(preClose))
-
 
 
             ## merge for diff rate caculation and descending sort by diff rate
@@ -248,7 +253,8 @@ if __name__ == "__main__":
 
             # buy
             if position == 0:
-                if True or btc.loc[i-1, 'macd'] > btc.loc[i-1, 'macd_s']:
+                # if True or btc.loc[i-1, 'macd'] > btc.loc[i-1, 'macd_s']:
+                if btc.loc[i]['Change'] > 0.004:
                     # and btc.loc[i, 'macd'] > btc.loc[i - 1, 'macd']:
                     longlist = {}
                     shortlist = {}
@@ -342,6 +348,7 @@ if __name__ == "__main__":
     subtitle = "Profit %.1f%%, CAGR %.1f%% MDD %.1f%% in %s ~ %s" % (((final_value-init_cash)/init_cash)*100, cagr, abs(mdd), start_date, end_date)
     ax1.set_title(subtitle)
     ax3.set_title("Leverage x %d" % leverage)
+    btc = btc.rename(columns = {'Date':'Datetime'})
     vdf2 = btc.merge(vdf, how='left', on='Datetime')
     btc[['Close', 'Datetime']].plot(ax=ax1)
     btc[['macd', 'macd_s']].plot(ax=ax2)
